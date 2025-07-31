@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "tab3yellow.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

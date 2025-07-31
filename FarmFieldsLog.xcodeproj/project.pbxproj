@@ -10,9 +10,22 @@
 		F45857FD2E3ABF2800C25E96 /* FarmFieldsLog.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FarmFieldsLog.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		F45858172E3AC1A600C25E96 /* Exceptions for "FarmFieldsLog" folder in "FarmFieldsLog" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = F45857FC2E3ABF2800C25E96 /* FarmFieldsLog */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		F45857FF2E3ABF2800C25E96 /* FarmFieldsLog */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				F45858172E3AC1A600C25E96 /* Exceptions for "FarmFieldsLog" folder in "FarmFieldsLog" target */,
+			);
 			path = FarmFieldsLog;
 			sourceTree = "<group>";
 		};
@@ -250,6 +263,7 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FarmFieldsLog/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "FarmFields Log";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -291,6 +305,7 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FarmFieldsLog/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "FarmFields Log";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
