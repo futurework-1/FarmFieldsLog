@@ -667,7 +667,7 @@ struct EventSection: View {
                 ScrollView(.vertical, showsIndicators: false) {
                     LazyVStack(spacing: 8) {
                         ForEach(dataManager.events) { event in
-                            EventCard(event: event)
+                            StorageEventCard(event: event)
                         }
                     }
                     .padding(.vertical, 4)
@@ -679,8 +679,8 @@ struct EventSection: View {
     }
 }
 
-// MARK: - Event Card
-struct EventCard: View {
+// MARK: - Storage Event Card
+struct StorageEventCard: View {
     let event: FarmEvent
     
     private var formattedDate: String {

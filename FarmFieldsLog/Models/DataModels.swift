@@ -122,7 +122,7 @@ struct Crop: Identifiable, Codable {
 }
 
 // MARK: - Animal Model
-struct Animal: Identifiable, Codable {
+struct Animal: Identifiable, Codable, Equatable {
     let id: UUID
     var species: AnimalSpecies
     var breed: String
@@ -362,6 +362,34 @@ struct FarmEvent: Identifiable, Codable {
             case .other: return .secondary
             }
         }
+    }
+}
+
+// MARK: - Weight Change Record Model
+struct WeightChangeRecord: Identifiable, Codable {
+    let id: UUID
+    var animalId: UUID
+    var date: Date
+    var weightChange: Double // Положительное для прибавки, отрицательное для убавки
+    var unit: String
+    var notes: String
+    
+    init(animalId: UUID, date: Date, weightChange: Double, unit: String, notes: String = "") {
+        self.id = UUID()
+        self.animalId = animalId
+        self.date = date
+        self.weightChange = weightChange
+        self.unit = unit
+        self.notes = notes
+    }
+    
+    var isPositiveChange: Bool {
+        return weightChange > 0
+    }
+    
+    var formattedChange: String {
+        let sign = weightChange > 0 ? "+" : ""
+        return "\(sign)\(String(format: "%.1f", weightChange)) \(unit)"
     }
 }
 

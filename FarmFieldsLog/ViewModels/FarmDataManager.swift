@@ -8,6 +8,7 @@ class FarmDataManager: ObservableObject {
     @Published var crops: [Crop] = []
     @Published var animals: [Animal] = []
     @Published var productionRecords: [ProductionRecord] = []
+    @Published var weightChangeRecords: [WeightChangeRecord] = []
     @Published var storageItems: [StorageItem] = []
     @Published var events: [FarmEvent] = []
     @Published var settings: AppSettings = AppSettings()
@@ -34,6 +35,7 @@ class FarmDataManager: ObservableObject {
         saveToUserDefaults(crops, key: "farm_crops")
         saveToUserDefaults(animals, key: "farm_animals")
         saveToUserDefaults(productionRecords, key: "production_records")
+        saveToUserDefaults(weightChangeRecords, key: "weight_change_records")
         saveToUserDefaults(storageItems, key: "storage_items")
         saveToUserDefaults(events, key: "farm_events")
         saveToUserDefaults(settings, key: "app_settings")
@@ -44,6 +46,7 @@ class FarmDataManager: ObservableObject {
         crops = loadFromUserDefaults([Crop].self, key: "farm_crops") ?? []
         animals = loadFromUserDefaults([Animal].self, key: "farm_animals") ?? []
         productionRecords = loadFromUserDefaults([ProductionRecord].self, key: "production_records") ?? []
+        weightChangeRecords = loadFromUserDefaults([WeightChangeRecord].self, key: "weight_change_records") ?? []
         storageItems = loadFromUserDefaults([StorageItem].self, key: "storage_items") ?? []
         events = loadFromUserDefaults([FarmEvent].self, key: "farm_events") ?? []
         settings = loadFromUserDefaults(AppSettings.self, key: "app_settings") ?? AppSettings()
@@ -136,6 +139,24 @@ class FarmDataManager: ObservableObject {
     
     func deleteProductionRecord(at indexSet: IndexSet) {
         productionRecords.remove(atOffsets: indexSet)
+        saveData()
+    }
+    
+    // MARK: - Weight Change Records Management
+    func addWeightChangeRecord(_ record: WeightChangeRecord) {
+        weightChangeRecords.append(record)
+        saveData()
+    }
+    
+    func updateWeightChangeRecord(_ record: WeightChangeRecord) {
+        if let index = weightChangeRecords.firstIndex(where: { $0.id == record.id }) {
+            weightChangeRecords[index] = record
+            saveData()
+        }
+    }
+    
+    func deleteWeightChangeRecord(at indexSet: IndexSet) {
+        weightChangeRecords.remove(atOffsets: indexSet)
         saveData()
     }
     
