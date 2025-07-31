@@ -16,41 +16,43 @@ struct StoragePlanningView: View {
                 .resizable()
                 .ignoresSafeArea(.all)
             
-            VStack(spacing: 0) {
-                    Image("warehouse_text")
+                        VStack(spacing: 0) {
+                // Фиксированный заголовок
+                Image("warehouse_text")
                     .resizable()
                     .scaledToFit()
                     .frame(height: 105)
-                    Spacer()
+                    .padding(.top, 20)
                 
-                if !hasStorageItems {
-                    // Пустое состояние
-                    Image("theresnot_text")
-                        .resizable()
-                        .scaledToFit()
-                        .padding(.horizontal, 10)
-            } else {
-                    // Здесь будет контент когда есть данные
-                    // TODO: Реализовать список складских элементов
-                    Text("Storage items will be shown here")
-                        .font(.custom("Chango-Regular", size: 18))
-                        .foregroundColor(.white)
-                        .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
+                // Скроллируемый контент
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        // Верхний отступ
+                        Spacer()
+                            .frame(height: 20)
+                        
+                        // Контент склада
+                        StorageContentView(dataManager: dataManager)
+                        
+                        // Отступ перед кнопкой
+                        Spacer()
+                            .frame(height: 30)
+                        
+                        // Кнопка Add inventory
+                        Button(action: {
+                            showingAddInventoryOverlay = true
+                        }) {
+                            Image("btn_add_inventory")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 340)
+                        }
+                        
+                        // Нижний отступ для tab bar
+                        Spacer()
+                            .frame(height: 150)
+                    }
                 }
-                
-                Spacer()
-                
-                                // Кнопка Add inventory
-                Button(action: {
-                    showingAddInventoryOverlay = true
-                }) {
-                    Image("btn_add_inventory")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 340)
-                }
-              
-                .padding(.bottom, 200) // Место для tab bar
             }
         }
         .overlay(
@@ -195,11 +197,10 @@ struct AddInventoryOverlay: View {
                 Spacer()
                             .frame(height: 50)
                         
-                        // Кнопка NEXT
-                        Button(action: {
-                            // TODO: Реализовать функциональность добавления
-                            print("Next button tapped - будет реализовано позже")
-                        }) {
+                                        // Кнопка SAVE
+                Button(action: {
+                    saveItem()
+                }) {
                             Image("btn_save")
                                 .resizable()
                                 .scaledToFit()
@@ -265,6 +266,31 @@ struct AddInventoryOverlay: View {
     // Функция для скрытия клавиатуры
     private func hideKeyboard() {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
+    
+    // Функция сохранения элемента склада
+    private func saveItem() {
+        // Очищаем единицы измерения из поля quantity
+        let cleanQuantity = quantity.replacingOccurrences(of: " \(dataManager.settings.selectedPrimaryUnit.shortName)", with: "")
+        
+        guard let quantityValue = Double(cleanQuantity), quantityValue > 0 else {
+            return
+        }
+        
+        let newItem = StorageItem(
+            name: itemName.trimmingCharacters(in: .whitespacesAndNewlines),
+            category: selectedCategory,
+            currentStock: quantityValue,
+            minimumStock: quantityValue * 0.2, // Устанавливаем минимум как 20% от текущего количества
+            unit: dataManager.settings.selectedPrimaryUnit.shortName,
+            expirationDate: nil,
+            lastUpdated: Date(),
+            cost: 0,
+            supplier: ""
+        )
+        
+        dataManager.addStorageItem(newItem)
+        isPresented = false
     }
     
     private func handleQuantityFocusChange(_ focused: Bool) {
@@ -423,6 +449,288 @@ extension View {
     }
 }
 
+// MARK: - Storage Content View
+struct StorageContentView: View {
+    let dataManager: FarmDataManager
+    
+    var hasStorageItems: Bool {
+        !dataManager.storageItems.isEmpty
+    }
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            if hasStorageItems {
+                // Список складских элементов
+                StorageItemsSection(dataManager: dataManager)
+                
+                // Секция EVENT
+                EventSection()
+                
+                // Сезоны (горизонтальный скролл)
+                SeasonsSection()
+                
+                TasksSection()
+            } else {
+                // Пустое состояние
+                Image("theresnot_text")
+                    .resizable()
+                    .scaledToFit()
+                    .padding(.horizontal, 10)
+            }
+        }
+    }
+}
+
+// MARK: - Storage Items Section
+struct StorageItemsSection: View {
+    let dataManager: FarmDataManager
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            // Показываем только первые 2 элемента
+            ForEach(Array(dataManager.storageItems.prefix(2))) { item in
+                StorageItemCard(item: item)
+            }
+            
+            // Если элементов больше 2, показываем что есть еще
+            if dataManager.storageItems.count > 2 {
+                // TODO: Добавить индикатор "еще элементы"
+            }
+        }
+        .padding(.horizontal, 20)
+    }
+}
+
+// MARK: - Storage Item Card
+struct StorageItemCard: View {
+    let item: StorageItem
+    
+    var body: some View {
+        ZStack {
+            Image("field")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 340)
+            
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(item.name.uppercased())
+                        .font(.custom("Chango-Regular", size: 16))
+                        .foregroundColor(.white)
+                        .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
+                    
+                    Text("\(String(format: "%.0f", item.currentStock)) \(item.unit)")
+                        .font(.custom("Chango-Regular", size: 14))
+                        .foregroundColor(.yellow)
+                        .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
+                }
+                
+                Spacer()
+                
+                // Индикатор категории
+                Image(categoryIconName(for: item.category))
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 22)
+            }
+            .padding(.horizontal, 26)
+            .padding(.vertical, 15)
+        }
+    }
+    
+    private func categoryIconName(for category: StorageItem.StorageCategory) -> String {
+        switch category {
+        case .feed: return "0icon"
+        case .fertilizer: return "1icon"
+        case .seeds: return "2icon"
+        case .tools: return "3icon"
+        default: return "0icon"
+        }
+    }
+}
+
+// MARK: - Event Section
+struct EventSection: View {
+    var body: some View {
+        VStack(spacing: 8) {
+            // Заголовок EVENT с кнопкой плюс
+            HStack {
+                Image("event_text")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 12)
+                
+                Spacer()
+                
+                Button(action: {
+                    // TODO: Добавить событие
+                }) {
+                    Image("my_plus")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 24)
+                }
+            }
+            .padding(.horizontal, 32)
+            
+            // Пример события
+            ZStack {
+                Image("field")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 340)
+                
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("TAP PLUS")
+                            .font(.custom("Chango-Regular", size: 11))
+                            .foregroundColor(.yellow)
+                            .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
+                        
+                        Text("ADD YOU FIRST REMINDER!")
+                            .font(.custom("Chango-Regular", size: 12))
+                            .foregroundColor(.white)
+                            .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
+                    }
+                    
+                    Spacer()
+                }
+                .padding(.horizontal, 46)
+                .padding(.vertical, 15)
+            }
+        }
+        .padding(.top, 20)
+    }
+}
+
+// MARK: - Seasons Section
+struct SeasonsSection: View {
+    let seasons = ["SPRING", "SUMMER", "AUTUMN", "WINTER"]
+    let seasonEmojis = ["🌸", "☀️", "🍂", "❄️"]
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 2) {
+                    ForEach(Array(seasons.enumerated()), id: \.offset) { index, season in
+                        SeasonButton(
+                            title: season,
+                            emoji: seasonEmojis[index],
+                            isSelected: index == 0 // SPRING выбрана по умолчанию
+                        )
+                    }
+                }
+                .padding(.horizontal, 26)
+            }
+        }
+        .padding(.top, 20)
+    }
+}
+
+// MARK: - Season Button
+struct SeasonButton: View {
+    let title: String
+    let emoji: String
+    let isSelected: Bool
+    
+    var body: some View {
+        Button(action: {
+            // TODO: Выбор сезона
+        }) {
+            ZStack {
+                Image("my_tab")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 110)
+                HStack(spacing: 2) {
+                    Text(emoji)
+                        .font(.system(size: 16))
+                    
+                    Text(title)
+                        .font(.custom("Chango-Regular", size: 12))
+                        .foregroundColor(.white)
+                        .shadow(color: .black.opacity(0.8), radius: 1, x: 1, y: 1)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+            }
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+// MARK: - Tasks Section
+struct TasksSection: View {
+    var body: some View {
+        VStack(spacing: 8) {
+            HStack {
+                Image("event_text")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 12)
+                    .hidden()
+                
+                Spacer()
+                
+                Button(action: {
+                    // TODO: Добавить событие
+                }) {
+                    Image("my_plus")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 24)
+                }
+            }
+            .padding(.horizontal, 10)
+            // Пример задач
+   
+                ZStack {
+                    Image("field")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 340)
+                    
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("TAP PLUS")
+                                .font(.custom("Chango-Regular", size: 12))
+                                .foregroundColor(.yellow)
+                                .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
+                            
+                            Text("AND ADD YOUR FIRST EVENT")
+                                .font(.custom("Chango-Regular", size: 10))
+                                .foregroundColor(.white)
+                                .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
+                        }
+                        
+                        Spacer()
+                        
+                        // Индикатор сезона
+                        ZStack {
+                            Image("my_around_tab")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 80)
+                            HStack(spacing: 4) {
+                                Text("🌸")
+                                    .font(.system(size: 10))
+                                Text("SPRING")
+                                    .font(.custom("Chango-Regular", size: 8))
+                                    .foregroundColor(.white)
+                                    .shadow(color: .black.opacity(0.8), radius: 1, x: 1, y: 1)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 25)
+                    .padding(.vertical, 15)
+                }
+            
+        }
+        .padding(.top, 20)
+        .padding(.horizontal, 20)
+    }
+}
+
 // MARK: - Поддерживающие компоненты (используются в AddStorageItemView)
 
 struct StorageItemDetailView: View {
@@ -572,15 +880,47 @@ struct AddStorageItemView: View {
         .environmentObject(FarmDataManager.shared)
 }
 
+#Preview("Storage Planning - With Data") {
+    let dataManager = FarmDataManager.shared
+    
+    // Добавляем тестовые данные
+    let testItem1 = StorageItem(
+        name: "Chicken Feed",
+        category: .feed,
+        currentStock: 20,
+        minimumStock: 5,
+        unit: "kg",
+        expirationDate: nil,
+        lastUpdated: Date(),
+        cost: 0,
+        supplier: ""
+    )
+    
+    let testItem2 = StorageItem(
+        name: "Corn Seeds",
+        category: .seeds,
+        currentStock: 15,
+        minimumStock: 3,
+        unit: "kg",
+        expirationDate: nil,
+        lastUpdated: Date(),
+        cost: 0,
+        supplier: ""
+    )
+    
+    return StoragePlanningView()
+        .environmentObject(dataManager)
+        .onAppear {
+            if dataManager.storageItems.isEmpty {
+                dataManager.addStorageItem(testItem1)
+                dataManager.addStorageItem(testItem2)
+            }
+        }
+}
+
 #Preview("Storage Planning - Add Inventory Overlay") {
     StoragePlanningView()
         .environmentObject(FarmDataManager.shared)
-        .onAppear {
-            // Симулируем открытие overlay
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                // Небольшая задержка для корректного отображения
-            }
-        }
         .overlay(
             AddInventoryOverlay(
                 isPresented: .constant(true),
