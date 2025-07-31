@@ -12,7 +12,7 @@ struct AddCropView: View {
     @State private var currentStage = Crop.CropStage.planted
     @State private var status = Crop.CropStatus.healthy
     @State private var notes = ""
-    @State private var unitOfMeasure = "kg"
+    @State private var unitOfMeasure = ""
     
     var body: some View {
         NavigationView {
@@ -70,6 +70,10 @@ struct AddCropView: View {
                     .disabled(name.isEmpty)
                 }
             }
+        }
+        .onAppear {
+            // Устанавливаем единицу измерения из настроек
+            unitOfMeasure = dataManager.settings.selectedPrimaryUnit.shortName
         }
     }
     

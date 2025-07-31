@@ -56,7 +56,7 @@ struct CustomTabBar: View {
                 .frame(height: 78)
             
             // Иконки
-            HStack(spacing: 22) {
+            HStack(spacing: 16) {
                 ForEach(0..<5) { index in
                     Button(action: {
                         selectedTab = index

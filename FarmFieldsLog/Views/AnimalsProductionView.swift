@@ -402,7 +402,7 @@ struct AddProductionRecordView: View {
     
     @State private var productType = ProductionRecord.ProductType.eggs
     @State private var amount: Double = 0
-    @State private var unit = "pieces"
+    @State private var unit = ""
     @State private var date = Date()
     @State private var notes = ""
     
@@ -455,6 +455,10 @@ struct AddProductionRecordView: View {
                     .disabled(amount <= 0 || unit.isEmpty)
                 }
             }
+        }
+        .onAppear {
+            // Устанавливаем единицу измерения из настроек
+            unit = dataManager.settings.selectedPrimaryUnit.shortName
         }
     }
     

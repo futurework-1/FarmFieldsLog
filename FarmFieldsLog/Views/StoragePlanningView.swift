@@ -446,7 +446,7 @@ struct AddStorageItemView: View {
     @State private var category = StorageItem.StorageCategory.feed
     @State private var currentStock: Double = 0
     @State private var minimumStock: Double = 0
-    @State private var unit = "kg"
+    @State private var unit = ""
     @State private var expirationDate: Date?
     @State private var hasExpirationDate = false
     @State private var cost: Double = 0
@@ -531,6 +531,10 @@ struct AddStorageItemView: View {
                     .disabled(name.isEmpty || unit.isEmpty)
                 }
             }
+        }
+        .onAppear {
+            // Устанавливаем единицу измерения из настроек
+            unit = dataManager.settings.selectedPrimaryUnit.shortName
         }
         .onChange(of: hasExpirationDate) { newValue in
             if !newValue {

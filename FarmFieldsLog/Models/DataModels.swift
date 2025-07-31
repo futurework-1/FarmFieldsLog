@@ -296,11 +296,26 @@ struct AppSettings: Codable, Equatable {
     var weightUnit: WeightUnit = .kilograms
     var volumeUnit: VolumeUnit = .liters
     var areaUnit: AreaUnit = .squareMeters
+    var selectedPrimaryUnit: PrimaryUnit = .kilograms // Основная выбранная единица измерения
     var enableNotifications: Bool = true
     var enableTaskReminders: Bool = true
     var enableWateringReminders: Bool = true
     var enableVaccinationReminders: Bool = true
     var reminderTime: Date = Calendar.current.date(from: DateComponents(hour: 9, minute: 0)) ?? Date()
+    
+    enum PrimaryUnit: String, CaseIterable, Codable, Equatable {
+        case kilograms = "KILOGRAMS (KG)"
+        case liters = "LITERS (L)"
+        case pieces = "PIECES (PCS)"
+        
+        var shortName: String {
+            switch self {
+            case .kilograms: return "kg"
+            case .liters: return "L"
+            case .pieces: return "pcs"
+            }
+        }
+    }
     
     enum WeightUnit: String, CaseIterable, Codable, Equatable {
         case kilograms = "kg"
