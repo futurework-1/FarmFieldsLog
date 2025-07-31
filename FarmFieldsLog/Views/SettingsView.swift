@@ -60,7 +60,7 @@ struct SettingsView: View {
                         }
                     )
                 }
-                .padding(.horizontal, 40)
+                .padding(.horizontal, 20)
                 
                 Spacer(minLength: 200)
             }
