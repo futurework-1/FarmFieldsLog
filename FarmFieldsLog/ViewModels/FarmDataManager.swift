@@ -16,7 +16,16 @@ class FarmDataManager: ObservableObject {
     
     private init() {
         loadData()
-        createSampleData()
+        // Удаляем автоматическое создание моковых данных
+        // createSampleData() - теперь будет вызываться только когда нужно
+    }
+    
+    // Новый инициализатор для тестов и preview
+    init(withSampleData: Bool = false) {
+        loadData()
+        if withSampleData {
+            createSampleData()
+        }
     }
     
     // MARK: - Data Persistence
@@ -314,5 +323,14 @@ class FarmDataManager: ObservableObject {
         storageItems.removeAll()
         events.removeAll()
         saveData()
+        print("🗑️ Все данные очищены")
+    }
+    
+    // Метод для добавления тестовых данных вручную (для отладки)
+    func addSampleDataIfNeeded() {
+        if animals.isEmpty && tasks.isEmpty && storageItems.isEmpty {
+            createSampleData()
+            print("📝 Добавлены тестовые данные")
+        }
     }
 }

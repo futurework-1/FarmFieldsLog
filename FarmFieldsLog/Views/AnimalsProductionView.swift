@@ -2,51 +2,97 @@ import SwiftUI
 
 struct AnimalsProductionView: View {
     @EnvironmentObject var dataManager: FarmDataManager
-    @State private var selectedTab = 0
-    @State private var showingAddAnimal = false
-    @State private var showingAddProduction = false
+    @State private var showingSpeciesSelection = false
+    @State private var showingAnimalDetails = false
+    @State private var selectedSpecies: Animal.AnimalSpecies?
     @State private var selectedAnimal: Animal?
     
+    var hasAnimals: Bool {
+        !dataManager.animals.isEmpty
+    }
+    
     var body: some View {
-        NavigationView {
+        ZStack {
+            // Фоновое изображение
+            Image("background")
+                .resizable()
+                .ignoresSafeArea(.all)
+            
             VStack(spacing: 0) {
-                // Tab Picker
-                Picker("View", selection: $selectedTab) {
-                    Text("Animals").tag(0)
-                    Text("Production").tag(1)
+                // Фиксированный заголовок
+                HStack {
+                    Spacer()
+                    Image("anim_prod_text")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 70)
+                    Spacer()
                 }
-                .pickerStyle(.segmented)
-                .padding()
+                .padding(.top, 20)
                 
-                if selectedTab == 0 {
-                    AnimalsListView(
-                        showingAddAnimal: $showingAddAnimal,
+                // Скроллируемый контент
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        // Верхний отступ
+                        Spacer()
+                            .frame(height: 20)
+                        
+                        // Контент животных
+                        AnimalsContentView(
+                            dataManager: dataManager,
                         selectedAnimal: $selectedAnimal
                     )
-                } else {
-                    ProductionListView(showingAddProduction: $showingAddProduction)
-                }
-            }
-            .navigationTitle("Animals & Production")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        if selectedTab == 0 {
-                            showingAddAnimal = true
-                        } else {
-                            showingAddProduction = true
+                        .id("animals_content_\(dataManager.animals.count)")
+                        
+                        // Отступ перед кнопкой
+                        Spacer()
+                            .frame(height: 30)
+                        
+                        // Кнопка Add animal
+                        Button(action: {
+                            showingSpeciesSelection = true
+                        }) {
+                            Image("btn_add_inventory")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 340)
                         }
-                    } label: {
-                        Image(systemName: "plus")
+                        
+                        // Нижний отступ для tab bar
+                        Spacer()
+                            .frame(height: 150)
                     }
                 }
             }
         }
-        .sheet(isPresented: $showingAddAnimal) {
-            AddAnimalView()
-        }
-        .sheet(isPresented: $showingAddProduction) {
-            AddProductionRecordView()
+        .overlay(
+            // Overlays
+            Group {
+                if showingSpeciesSelection {
+                    AnimalSpeciesSelectionOverlay(
+                        isPresented: $showingSpeciesSelection,
+                        selectedSpecies: $selectedSpecies,
+                        onSpeciesSelected: {
+                            showingSpeciesSelection = false
+                            showingAnimalDetails = true
+                        }
+                    )
+                } else if showingAnimalDetails {
+                    AnimalDetailsOverlay(
+                        isPresented: $showingAnimalDetails,
+                        selectedSpecies: selectedSpecies ?? .chicken,
+                        dataManager: dataManager
+                    )
+                }
+            }
+        )
+        .onChange(of: showingAnimalDetails) { isShowing in
+            if !isShowing {
+                // Когда overlay закрывается, принудительно обновляем UI
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    dataManager.objectWillChange.send()
+                }
+            }
         }
         .sheet(item: $selectedAnimal) { animal in
             AnimalDetailView(animal: animal)
@@ -54,430 +100,689 @@ struct AnimalsProductionView: View {
     }
 }
 
-struct AnimalsListView: View {
-    @EnvironmentObject var dataManager: FarmDataManager
-    @Binding var showingAddAnimal: Bool
+// MARK: - Animals Content View
+struct AnimalsContentView: View {
+    @ObservedObject var dataManager: FarmDataManager
     @Binding var selectedAnimal: Animal?
-    @State private var searchText = ""
-    @State private var selectedSpeciesFilter: Animal.AnimalSpecies?
     
-    var filteredAnimals: [Animal] {
-        var animals = dataManager.animals
-        
-        if !searchText.isEmpty {
-            animals = animals.filter {
-                $0.breed.localizedCaseInsensitiveContains(searchText) ||
-                $0.species.rawValue.localizedCaseInsensitiveContains(searchText) ||
-                ($0.name?.localizedCaseInsensitiveContains(searchText) ?? false)
-            }
-        }
-        
-        if let speciesFilter = selectedSpeciesFilter {
-            animals = animals.filter { $0.species == speciesFilter }
-        }
-        
-        return animals.sorted { $0.species.rawValue < $1.species.rawValue }
+    var hasAnimals: Bool {
+        !dataManager.animals.isEmpty
     }
     
     var body: some View {
         VStack(spacing: 0) {
-            // Search and Filter
-            VStack(spacing: 12) {
-                SearchBar(text: $searchText)
-                
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 12) {
-                        FilterChip(
-                            title: "All",
-                            isSelected: selectedSpeciesFilter == nil
-                        ) {
-                            selectedSpeciesFilter = nil
-                        }
-                        
-                        ForEach(Animal.AnimalSpecies.allCases, id: \.self) { species in
-                            FilterChip(
-                                title: species.rawValue,
-                                isSelected: selectedSpeciesFilter == species
-                            ) {
-                                selectedSpeciesFilter = species == selectedSpeciesFilter ? nil : species
-                            }
-                        }
-                    }
-                    .padding(.horizontal)
-                }
-            }
-            .padding(.vertical)
-            .background(Color(.systemGroupedBackground))
-            
-            // Animals List
-            if filteredAnimals.isEmpty {
-                Spacer()
-                EmptyStateView(
-                    icon: "pawprint",
-                    title: "No Animals Yet",
-                    subtitle: searchText.isEmpty ? "Start by adding your first animal" : "No animals match your search",
-                    buttonTitle: "Add Animal"
-                ) {
-                    showingAddAnimal = true
-                }
-                Spacer()
+            if hasAnimals {
+                // Список животных
+                AnimalsSection(
+                    dataManager: dataManager,
+                    selectedAnimal: $selectedAnimal
+                )
             } else {
-                List {
-                    ForEach(filteredAnimals) { animal in
-                        AnimalRowView(animal: animal) {
+                // Пустое состояние
+                Image("theresnot_text")
+                    .resizable()
+                    .scaledToFit()
+                    .padding(.horizontal, 10)
+            }
+        }
+    }
+}
+
+// MARK: - Animals Section
+struct AnimalsSection: View {
+    @ObservedObject var dataManager: FarmDataManager
+    @Binding var selectedAnimal: Animal?
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            // Скроллируемый список всех животных
+            ScrollView(.vertical, showsIndicators: false) {
+                LazyVStack(spacing: 8) {
+                    ForEach(dataManager.animals) { animal in
+                        AnimalCard(animal: animal) {
                             selectedAnimal = animal
                         }
                     }
-                    .onDelete(perform: deleteAnimals)
                 }
-                .listStyle(.insetGrouped)
+                .padding(.vertical, 4)
             }
+            .frame(maxHeight: 300) // Ограничиваем высоту для скролла
         }
-    }
-    
-    private func deleteAnimals(at offsets: IndexSet) {
-        dataManager.deleteAnimal(at: offsets)
+        .padding(.horizontal, 12)
     }
 }
 
-struct ProductionListView: View {
-    @EnvironmentObject var dataManager: FarmDataManager
-    @Binding var showingAddProduction: Bool
-    @State private var selectedProductFilter: ProductionRecord.ProductType?
-    
-    var filteredRecords: [ProductionRecord] {
-        var records = dataManager.productionRecords
-        
-        if let productFilter = selectedProductFilter {
-            records = records.filter { $0.productType == productFilter }
-        }
-        
-        return records.sorted { $0.date > $1.date }
-    }
-    
-    var weeklyStats: [(ProductionRecord.ProductType, Double)] {
-        let weekAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
-        let weeklyRecords = dataManager.productionRecords.filter { $0.date >= weekAgo }
-        
-        let grouped = Dictionary(grouping: weeklyRecords) { $0.productType }
-        return grouped.map { (type, records) in
-            let total = records.reduce(0) { $0 + $1.amount }
-            return (type, total)
-        }.sorted { $0.1 > $1.1 }
-    }
-    
-    var body: some View {
-        VStack(spacing: 0) {
-            // Weekly Stats
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 15) {
-                    ForEach(weeklyStats, id: \.0) { stat in
-                        ProductionStatCard(
-                            productType: stat.0,
-                            amount: stat.1
-                        )
-                    }
-                }
-                .padding(.horizontal)
-            }
-            .padding(.vertical)
-            .background(Color(.systemGroupedBackground))
-            
-            // Product Filter
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    FilterChip(
-                        title: "All",
-                        isSelected: selectedProductFilter == nil
-                    ) {
-                        selectedProductFilter = nil
-                    }
-                    
-                    ForEach(ProductionRecord.ProductType.allCases, id: \.self) { product in
-                        FilterChip(
-                            title: product.rawValue,
-                            isSelected: selectedProductFilter == product
-                        ) {
-                            selectedProductFilter = product == selectedProductFilter ? nil : product
-                        }
-                    }
-                }
-                .padding(.horizontal)
-            }
-            .padding(.bottom)
-            .background(Color(.systemGroupedBackground))
-            
-            // Production Records
-            if filteredRecords.isEmpty {
-                Spacer()
-                EmptyStateView(
-                    icon: "chart.bar",
-                    title: "No Production Records",
-                    subtitle: "Start tracking your farm production",
-                    buttonTitle: "Add Record"
-                ) {
-                    showingAddProduction = true
-                }
-                Spacer()
-            } else {
-                List {
-                    ForEach(filteredRecords) { record in
-                        ProductionRecordRowView(record: record)
-                    }
-                    .onDelete(perform: deleteRecords)
-                }
-                .listStyle(.insetGrouped)
-            }
-        }
-    }
-    
-    private func deleteRecords(at offsets: IndexSet) {
-        dataManager.deleteProductionRecord(at: offsets)
-    }
-}
-
-// Supporting Views
-struct AnimalRowView: View {
+// MARK: - Animal Card
+struct AnimalCard: View {
     let animal: Animal
     let onTap: () -> Void
     
     var body: some View {
         Button(action: onTap) {
-            HStack(spacing: 12) {
-                // Animal Icon
-                Text(animal.species.icon)
-                    .font(.title2)
-                    .frame(width: 40, height: 40)
-                    .background(animal.healthStatus.color.opacity(0.2))
-                    .cornerRadius(8)
+            ZStack {
+                Image("field_empty")
+                    .resizable()
+                    .frame(width: 340, height: 70)
                 
+                HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    HStack {
-                        Text(animal.species.rawValue)
-                            .font(.headline)
-                            .foregroundColor(.primary)
+                        Text(animal.species.rawValue.uppercased())
+                            .font(.custom("Chango-Regular", size: 16))
+                            .foregroundColor(.white)
+                            .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
+                        
+                        Text("\(animal.breed) - COUNT: \(animal.count)")
+                            .font(.custom("Chango-Regular", size: 12))
+                            .foregroundColor(.yellow)
+                            .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
+                        
+                        HStack(spacing: 4) {
+                            Circle()
+                                .fill(animal.healthStatus.color)
+                                .frame(width: 8, height: 8)
+                            
+                            Text(animal.healthStatus.rawValue.uppercased())
+                                .font(.custom("Chango-Regular", size: 10))
+                                .foregroundColor(.white.opacity(0.8))
+                                .shadow(color: .black.opacity(0.8), radius: 1, x: 1, y: 1)
+                        }
+                    }
+                    
+                    Spacer()
+                    
+                    VStack {
+                        Text(animal.species.icon)
+                            .font(.system(size: 24))
                         
                         if animal.isHighProducer {
                             Image(systemName: "star.fill")
                                 .font(.caption)
                                 .foregroundColor(.yellow)
                         }
-                        
-                        Spacer()
-                        
-                        Text("Count: \(animal.count)")
-                            .font(.caption)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(Color.blue.opacity(0.2))
-                            .foregroundColor(.blue)
-                            .cornerRadius(8)
+                    }
+                }
+                .padding(.horizontal, 26)
+                .padding(.vertical, 15)
+            }
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+// MARK: - Animal Species Selection Overlay
+struct AnimalSpeciesSelectionOverlay: View {
+    @Binding var isPresented: Bool
+    @Binding var selectedSpecies: Animal.AnimalSpecies?
+    let onSpeciesSelected: () -> Void
+    
+    // Доступные виды животных (5 как на скриншоте)
+    private let availableSpecies: [Animal.AnimalSpecies] = [.chicken, .cow, .sheep, .goat, .duck]
+    
+        var body: some View {
+        ZStack {
+            // Фоновое изображение
+            Image("background")
+                .resizable()
+                .ignoresSafeArea(.all)
+            
+            VStack(spacing: 0) {
+                // Header с кнопкой назад и заголовком
+                HStack {
+                    Button(action: {
+                        isPresented = false
+                    }) {
+                        Image("btn_back")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 40, height: 40)
                     }
                     
-                    Text(animal.breed)
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
+                    Spacer()
                     
-                    HStack {
-                        Circle()
-                            .fill(animal.healthStatus.color)
-                            .frame(width: 8, height: 8)
-                        
-                        Text(animal.healthStatus.rawValue)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                    Image("add_animal_text")
+                        .resizable()
+                        .scaledToFit()
+                    
+                    Spacer()
+                    
+                    Image("btn_back")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 40, height: 40)
+                        .hidden()
+                }
+                .padding(.horizontal, 20)
                         
                         Spacer()
                         
-                        if !animal.age.isEmpty {
-                            Text("Age: \(animal.age)")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                // Кнопки видов животных
+                VStack(spacing: 12) {
+                    ForEach(availableSpecies, id: \.self) { species in
+                        Button(action: {
+                            selectedSpecies = species
+                            onSpeciesSelected()
+                        }) {
+                            ZStack {
+                                Image("field_empty")
+                                    .resizable()
+                                    .frame(width: 340, height: 60)
+                                
+                                HStack {
+                                    Text(species.icon)
+                                        .font(.system(size: 24))
+                                    
+                                    Text(species.rawValue.uppercased())
+                                        .font(.custom("Chango-Regular", size: 16))
+                                        .foregroundColor(.white)
+                                        .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
+                                    
+                                    Spacer()
+                                }
+                                .padding(.horizontal, 25)
+                            }
                         }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                }
+                .padding(.horizontal, 20)
+                
+                Spacer()
+            }
+        }
+    }
+}
+
+// MARK: - Animal Details Overlay
+struct AnimalDetailsOverlay: View {
+    @Binding var isPresented: Bool
+    let selectedSpecies: Animal.AnimalSpecies
+    let dataManager: FarmDataManager
+    
+    @State private var quantity: String = ""
+    @State private var weight: String = ""
+    @State private var eggPerDay: String = ""
+    @State private var selectedFeedingPlan: String = "FEEDING"
+    @State private var selectedCare: String = "CARE"
+    @State private var selectedCleaning: String = "EVERY DAY"
+    @State private var isHighProducer: Bool = false
+    @State private var hasScrolled: Bool = false
+    
+    // Варианты кормления
+    private let feedingOptions = ["FEEDING", "PLAN OF FEEDING AND CARE"]
+    // Варианты ухода
+    private let careOptions = ["CARE", "CLEANING"]
+    // Варианты частоты очистки
+    private let cleaningOptions = ["EVERY DAY", "EVERY 3 DAYS", "ONCE A WEEK", "TWICE A MONTH"]
+    
+    // Проверка готовности формы
+    private var isFormValid: Bool {
+        !quantity.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+    
+    var body: some View {
+        ZStack {
+            // Фоновое изображение
+            Image("background")
+                .resizable()
+                .ignoresSafeArea(.all)
+            
+            VStack(spacing: 0) {
+                // Header с кнопкой назад и заголовком
+                HStack {
+                    Button(action: {
+                        isPresented = false
+                    }) {
+                        Image("btn_back")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 40, height: 40)
+                    }
+                    
+                    Spacer()
+                    
+                    Image("add_animal_text")
+                        .resizable()
+                        .scaledToFit()
+                    
+                    Spacer()
+                    
+                    Image("btn_back")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 40, height: 40)
+                        .hidden()
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 10)
+                
+                // Скроллируемый контент
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        // Верхний отступ
+                        Spacer()
+                            .frame(height: 20)
+                        
+                        // Заголовок с типом животного
+                        HStack {
+                            Text(selectedSpecies.rawValue.uppercased())
+                                .font(.custom("Chango-Regular", size: 18))
+                                .foregroundColor(.white)
+                                .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
+                            Spacer()
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 16)
+                        
+                        // Основные поля
+                        VStack(spacing: 16) {
+                            AnimalTextField(
+                                placeholder: "QUANTITY",
+                                text: $quantity,
+                                keyboardType: .numberPad,
+                                isNumericOnly: true
+                            )
+                            
+                            AnimalTextField(
+                                placeholder: "WEIGHT",
+                                text: $weight,
+                                keyboardType: .decimalPad,
+                                unit: dataManager.settings.selectedPrimaryUnit.shortName
+                            )
+                            
+                            if selectedSpecies == .chicken || selectedSpecies == .duck {
+                                AnimalTextField(
+                                    placeholder: "EGG (PER DAY)",
+                                    text: $eggPerDay,
+                                    keyboardType: .numberPad,
+                                    isNumericOnly: true
+                                )
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        
+                        // План кормления и ухода
+                        VStack(spacing: 16) {
+                            Text("PLAN OF FEEDING AND CARE")
+                                .font(.custom("Chango-Regular", size: 13))
+                                .foregroundColor(.white)
+                                .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
+                            
+                            // FEEDING
+                            AnimalDropdown(
+                                placeholder: "FEEDING",
+                                selectedOption: $selectedFeedingPlan,
+                                options: feedingOptions
+                            )
+                            
+                            // CARE
+                            AnimalDropdown(
+                                placeholder: "CARE",
+                                selectedOption: $selectedCare,
+                                options: careOptions
+                            )
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 20)
+                        
+                        // Частота очистки
+                        VStack(spacing: 16) {
+                            Text("CLEANING")
+                                .font(.custom("Chango-Regular", size: 13))
+                                .foregroundColor(.white)
+                                .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
+                            
+                            VStack(spacing: 8) {
+                                ForEach(cleaningOptions, id: \.self) { option in
+                                    Button(action: {
+                                        selectedCleaning = option
+                                    }) {
+                    HStack {
+                                            Text(option)
+                                                .font(.custom("Chango-Regular", size: 14))
+                                                .foregroundColor(.white)
+                                            Spacer()
+                                        }
+                                        .padding()
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 10)
+                                                .foregroundColor(selectedCleaning == option ? .blue.opacity(0.8) : .black.opacity(0.3))
+                                        )
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 20)
+                        
+                        // High Productivity Bird
+                        HStack {
+                            Button(action: {
+                                isHighProducer.toggle()
+                            }) {
+                                HStack {
+                                    Image(systemName: isHighProducer ? "checkmark.square.fill" : "square")
+                                        .foregroundColor(.white)
+                                    
+                                    Text("HIGH PRODUCTIVITY BIRD")
+                                        .font(.custom("Chango-Regular", size: 14))
+                                        .foregroundColor(.white)
+                                        .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
+                                    
+                                    Spacer()
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 20)
+                        
+                        // Отступ перед кнопкой
+                        Spacer()
+                            .frame(height: 40)
+                        
+                        // Кнопка SAVE
+                        Button(action: {
+                            saveAnimal()
+                        }) {
+                            Image("btn_save")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(height: 55)
+                                .opacity(isFormValid ? 1 : 0.5)
+                        }
+                        .disabled(!isFormValid)
+                        .padding(.horizontal, 20)
+                        
+                        // Нижний отступ для tab bar
+                        Spacer()
+                            .frame(height: 200)
                     }
                 }
             }
-            .padding(.vertical, 4)
         }
-        .buttonStyle(.plain)
+        .onTapGesture {
+            hideKeyboard()
+        }
+        .simultaneousGesture(
+            TapGesture()
+                .onEnded { _ in
+                    // Закрываем dropdown'ы при тапе на пустое место
+                    hideKeyboard()
+                }
+        )
+    }
+    
+    // Функция для скрытия клавиатуры
+    private func hideKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
+    
+    // Функция сохранения животного
+    private func saveAnimal() {
+        guard let quantityValue = Int(quantity), quantityValue > 0 else {
+            print("❌ Ошибка: Некорректное количество животных")
+            return
+        }
+        
+        let weightValue = Double(weight) ?? 0.0
+        let eggValue = Double(eggPerDay) ?? 0.0
+        
+        // Формируем детальную информацию
+        var detailedNotes = "Type: \(selectedSpecies.rawValue)"
+        if weightValue > 0 {
+            detailedNotes += ", Weight: \(weightValue) \(dataManager.settings.selectedPrimaryUnit.shortName)"
+        }
+        if eggValue > 0 {
+            detailedNotes += ", Eggs per day: \(eggValue)"
+        }
+        detailedNotes += ", Feeding: \(selectedFeedingPlan), Care: \(selectedCare), Cleaning: \(selectedCleaning)"
+        
+        let newAnimal = Animal(
+            species: selectedSpecies,
+            breed: selectedSpecies.rawValue,
+            name: nil,
+            count: quantityValue,
+            age: "",
+            healthStatus: .good,
+            lastVaccination: nil,
+            nextVaccination: nil,
+            notes: detailedNotes,
+            isHighProducer: isHighProducer
+        )
+        
+        print("✅ Сохраняем животное: \(selectedSpecies.rawValue), количество: \(quantityValue)")
+        dataManager.addAnimal(newAnimal)
+        print("✅ Всего животных в базе: \(dataManager.animals.count)")
+        
+        isPresented = false
     }
 }
 
-struct ProductionStatCard: View {
-    let productType: ProductionRecord.ProductType
-    let amount: Double
+// MARK: - Animal Dropdown
+struct AnimalDropdown: View {
+    let placeholder: String
+    @Binding var selectedOption: String
+    let options: [String]
+    @State private var isExpanded: Bool = false
     
     var body: some View {
-        VStack(spacing: 8) {
-            Image(systemName: productType.icon)
-                .font(.title2)
-                .foregroundColor(productType.color)
+        VStack(spacing: 0) {
+            // Main dropdown button
+            Button(action: {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    isExpanded.toggle()
+                }
+            }) {
+                ZStack {
+                    Image("field_empty")
+                        .resizable()
+                        .frame(width: 340, height: 50)
+                        .shadow(color: .black.opacity(0.2), radius: 3, x: 0, y: 2)
+                    
+                    HStack {
+                        Text(selectedOption.isEmpty ? placeholder : selectedOption)
+                            .font(.custom("Chango-Regular", size: 14))
+                            .foregroundColor(selectedOption.isEmpty ? .gray : .white)
+                        
+                        Spacer()
+                        
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.white)
+                            .rotationEffect(.degrees(isExpanded ? 180 : 0))
+                            .animation(.easeInOut(duration: 0.3), value: isExpanded)
+                    }
+                    .padding(.horizontal, 25)
+                    .padding(.vertical, 15)
+                }
+            }
+            .buttonStyle(PlainButtonStyle())
             
-            Text(String(format: "%.1f", amount))
-                .font(.custom("Chango-Regular", size: 18))
-                .foregroundColor(.primary)
-            
-            Text(productType.rawValue)
-                .font(.caption)
-                .foregroundColor(.secondary)
-            
-            Text("This Week")
-                .font(.caption2)
-                .foregroundColor(.secondary)
+            // Dropdown options
+            if isExpanded {
+                VStack(spacing: 4) {
+                    ForEach(options, id: \.self) { option in
+                        Button(action: {
+                            selectedOption = option
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                isExpanded = false
+                            }
+                        }) {
+                            HStack {
+                                Text(option)
+                                    .font(.custom("Chango-Regular", size: 14))
+                                    .foregroundColor(.white)
+                                Spacer()
+                            }
+                            .padding(.horizontal, 25)
+                            .padding(.vertical, 12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .foregroundColor(selectedOption == option ? 
+                                        Color.blue.opacity(0.6) : 
+                                        Color.black.opacity(0.8))
+                            )
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                }
+                .frame(width: 340)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .foregroundColor(Color.black.opacity(0.9))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                        )
+                )
+                .padding(.top, -10)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
         }
-        .padding()
-        .frame(width: 100, height: 100)
-        .background(Color(.systemBackground))
-        .cornerRadius(12)
-        .shadow(color: .gray.opacity(0.2), radius: 2, x: 0, y: 1)
     }
 }
 
-struct ProductionRecordRowView: View {
-    let record: ProductionRecord
+// MARK: - Animal Text Field
+struct AnimalTextField: View {
+    let placeholder: String
+    @Binding var text: String
+    var keyboardType: UIKeyboardType = .default
+    var unit: String = ""
+    var isNumericOnly: Bool = false
     
     var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: record.productType.icon)
-                .font(.title3)
-                .foregroundColor(record.productType.color)
-                .frame(width: 30)
+        ZStack {
+            Image("field_empty")
+                .resizable()
+                .frame(width: 340, height: 50)
+                .shadow(color: .black.opacity(0.2), radius: 3, x: 0, y: 2)
             
-            VStack(alignment: .leading, spacing: 4) {
-                Text(record.productType.rawValue)
-                    .font(.headline)
-                    .foregroundColor(.primary)
-                
-                Text("\(String(format: "%.1f", record.amount)) \(record.unit)")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                
-                if !record.notes.isEmpty {
-                    Text(record.notes)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .lineLimit(2)
+            HStack {
+                TextField("", text: $text)
+                    .placeholder(when: text.isEmpty) {
+                        Text(placeholder)
+                            .font(.custom("Chango-Regular", size: 14))
+                            .foregroundColor(.gray)
+                    }
+                    .font(.custom("Chango-Regular", size: 16))
+                    .foregroundColor(.white)
+                    .keyboardType(keyboardType)
+                    .onChange(of: text) { newValue in
+                        var filteredValue = newValue
+                        
+                        // Если это поле только для цифр, оставляем только цифры
+                        if isNumericOnly {
+                            filteredValue = newValue.filter { $0.isNumber }
+                        }
+                        
+                        // Ограничение символов (20 символов максимум)
+                        if filteredValue.count > 20 {
+                            filteredValue = String(filteredValue.prefix(20))
+                        }
+                        
+                        // Обновляем только если значение изменилось
+                        if filteredValue != newValue {
+                            text = filteredValue
                 }
             }
             
             Spacer()
             
-            VStack(alignment: .trailing) {
-                Text(record.date, style: .date)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                
-                Text(record.date, style: .time)
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
+                if !unit.isEmpty {
+                    Text(unit)
+                        .font(.custom("Chango-Regular", size: 14))
+                        .foregroundColor(.gray)
+                }
             }
+            .padding(.horizontal, 25)
+            .padding(.vertical, 15)
         }
-        .padding(.vertical, 4)
     }
 }
 
-// Placeholder Views
+// MARK: - Animal Detail View
 struct AnimalDetailView: View {
     @Environment(\.dismiss) private var dismiss
     let animal: Animal
     
     var body: some View {
-        NavigationView {
-            Text("Animal Detail View - Coming Soon")
-                .navigationTitle(animal.species.rawValue)
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarLeading) {
+        ZStack {
+            // Фоновое изображение
+            Image("background")
+                .resizable()
+                .ignoresSafeArea(.all)
+            
+            VStack {
+                HStack {
                         Button("Close") {
                             dismiss()
-                        }
                     }
-                }
-        }
-    }
-}
-
-struct AddProductionRecordView: View {
-    @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject var dataManager: FarmDataManager
-    
-    @State private var productType = ProductionRecord.ProductType.eggs
-    @State private var amount: Double = 0
-    @State private var unit = ""
-    @State private var date = Date()
-    @State private var notes = ""
-    
-    var body: some View {
-        NavigationView {
-            Form {
-                Section(header: Text("Production Details")) {
-                    Picker("Product Type", selection: $productType) {
-                        ForEach(ProductionRecord.ProductType.allCases, id: \.self) { type in
-                            HStack {
-                                Image(systemName: type.icon)
-                                    .foregroundColor(type.color)
-                                Text(type.rawValue)
-                            }
-                            .tag(type)
-                        }
-                    }
+                    .font(.custom("Chango-Regular", size: 16))
+                    .foregroundColor(.white)
+                    .padding()
                     
-                    HStack {
-                        Text("Amount")
                         Spacer()
-                        TextField("0", value: $amount, format: .number)
-                            .keyboardType(.decimalPad)
-                            .multilineTextAlignment(.trailing)
-                    }
-                    
-                    TextField("Unit", text: $unit)
-                    
-                    DatePicker("Date", selection: $date, displayedComponents: [.date, .hourAndMinute])
                 }
                 
-                Section(header: Text("Notes")) {
-                    TextField("Additional notes", text: $notes, axis: .vertical)
-                        .lineLimit(3...6)
-                }
-            }
-            .navigationTitle("Add Production")
-            .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
+                Spacer()
+                
+                VStack(spacing: 20) {
+                    Text(animal.species.icon)
+                        .font(.system(size: 80))
+                    
+                    Text(animal.species.rawValue.uppercased())
+                        .font(.custom("Chango-Regular", size: 28))
+                        .foregroundColor(.white)
+                        .shadow(color: .black.opacity(0.8), radius: 3, x: 3, y: 3)
+                    
+                    Text("DETAIL VIEW - COMING SOON")
+                        .font(.custom("Chango-Regular", size: 16))
+                        .foregroundColor(.yellow)
+                        .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
                 }
                 
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Save") {
-                        saveRecord()
-                    }
-                    .disabled(amount <= 0 || unit.isEmpty)
-                }
+                Spacer()
             }
         }
-        .onAppear {
-            // Устанавливаем единицу измерения из настроек
-            unit = dataManager.settings.selectedPrimaryUnit.shortName
-        }
-    }
-    
-    private func saveRecord() {
-        let newRecord = ProductionRecord(
-            date: date,
-            productType: productType,
-            amount: amount,
-            unit: unit,
-            animalId: nil,
-            notes: notes
-        )
-        
-        dataManager.addProductionRecord(newRecord)
-        dismiss()
     }
 }
 
-#Preview {
+
+
+#Preview("Animals & Production - Empty State") {
     AnimalsProductionView()
         .environmentObject(FarmDataManager.shared)
+}
+
+#Preview("Animals & Production - With Animals") {
+    // Создаем dataManager с моковыми данными только для preview
+    let previewDataManager = FarmDataManager(withSampleData: true)
+    
+    return AnimalsProductionView()
+        .environmentObject(previewDataManager)
+}
+
+#Preview("Animal Species Selection") {
+    AnimalsProductionView()
+        .environmentObject(FarmDataManager())
+        .overlay(
+            AnimalSpeciesSelectionOverlay(
+                isPresented: .constant(true),
+                selectedSpecies: .constant(nil),
+                onSpeciesSelected: {}
+            )
+        )
+}
+
+#Preview("Animal Details Overlay") {
+    let previewDataManager = FarmDataManager()
+    return AnimalsProductionView()
+        .environmentObject(previewDataManager)
+        .overlay(
+            AnimalDetailsOverlay(
+                isPresented: .constant(true),
+                selectedSpecies: .chicken,
+                dataManager: previewDataManager
+            )
+        )
 }
