@@ -124,6 +124,18 @@ class FarmDataManager: ObservableObject {
         saveData()
     }
     
+    func deleteAnimal(_ animal: Animal) {
+        animals.removeAll { $0.id == animal.id }
+        
+        // Also delete all related records
+        productionRecords.removeAll { $0.animalId == animal.id }
+        weightChangeRecords.removeAll { $0.animalId == animal.id }
+        events.removeAll { $0.relatedAnimalId == animal.id }
+        
+        saveData()
+        print("🗑️ Deleted animal: \(animal.species.rawValue) and all related records")
+    }
+    
     // MARK: - Production Records Management
     func addProductionRecord(_ record: ProductionRecord) {
         productionRecords.append(record)

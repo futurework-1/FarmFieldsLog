@@ -88,7 +88,12 @@ struct AnimalsProductionView: View {
                     AnimalDetailOverlay(
                         isPresented: $showingAnimalDetailView,
                         animal: animal,
-                        dataManager: dataManager
+                        dataManager: dataManager,
+                        onAnimalDeleted: {
+                            // Reset state after animal deletion
+                            selectedAnimal = nil
+                            showingAnimalDetailView = false
+                        }
                     )
                 }
             }
@@ -723,8 +728,11 @@ struct AnimalDetailOverlay: View {
     @Binding var isPresented: Bool
     let animal: Animal
     let dataManager: FarmDataManager
+    let onAnimalDeleted: (() -> Void)?
     @State private var showingAddEggOverlay = false
     @State private var showingAddWeightOverlay = false
+    @State private var showingAddEventOverlay = false
+    @State private var showingDeleteAlert = false
     
     var body: some View {
         ZStack {
@@ -761,10 +769,11 @@ struct AnimalDetailOverlay: View {
                             Image(systemName: "pencil")
                                 .font(.system(size: 18, weight: .medium))
                                 .foregroundColor(.yellow)
+                                .hidden()
                         }
                         
                         Button(action: {
-                            // TODO: Delete action
+                            showingDeleteAlert = true
                         }) {
                             Image(systemName: "trash")
                                 .font(.system(size: 18, weight: .medium))
@@ -779,7 +788,8 @@ struct AnimalDetailOverlay: View {
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 20) {
                         // Основная карточка с информацией о животном
-                        AnimalMainInfoCard(animal: animal)
+                        AnimalMainInfoCard(animal: animal, dataManager: dataManager)
+                            .id("animal_card_\(animal.id)_\(dataManager.productionRecords.count)_\(dataManager.weightChangeRecords.count)")
                         
                         // Кнопки действий
                         AnimalActionButtons(
@@ -835,7 +845,13 @@ struct AnimalDetailOverlay: View {
                         )
                         
                         // События (вакцинация)
-                        EventsSection(animal: animal, dataManager: dataManager)
+                        EventsSection(
+                            animal: animal,
+                            dataManager: dataManager,
+                            onAddEvent: {
+                                showingAddEventOverlay = true
+                            }
+                        )
                         
                         // План кормления и ухода (только для птиц)
                         if animal.species == .chicken || animal.species == .duck {
@@ -852,7 +868,7 @@ struct AnimalDetailOverlay: View {
             }
         }
         .overlay(
-            // Add Egg/Production Overlay
+            // Add Overlays
             Group {
                 if showingAddEggOverlay {
                     AddEggProductionOverlay(
@@ -866,91 +882,245 @@ struct AnimalDetailOverlay: View {
                         animal: animal,
                         dataManager: dataManager
                     )
+                } else if showingAddEventOverlay {
+                    AddAnimalEventOverlay(
+                        isPresented: $showingAddEventOverlay,
+                        animal: animal,
+                        dataManager: dataManager
+                    )
                 }
             }
         )
+        .onChange(of: showingAddEggOverlay) { isShowing in
+            if !isShowing {
+                // Когда egg overlay закрывается, принудительно обновляем UI
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                    dataManager.objectWillChange.send()
+                    print("🔄 Обновление после закрытия egg overlay")
+                }
+            }
+        }
+        .onChange(of: showingAddWeightOverlay) { isShowing in
+            if !isShowing {
+                // Когда weight overlay закрывается, принудительно обновляем UI
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                    dataManager.objectWillChange.send()
+                    print("🔄 Обновление после закрытия weight overlay")
+                }
+            }
+        }
+        .alert("Delete Animal?", isPresented: $showingDeleteAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
+                deleteAnimal()
+            }
+        } message: {
+            Text("This action cannot be undone. All production, weight, and event records for this animal will be permanently deleted.")
+        }
+    }
+    
+    // MARK: - Delete Animal Function
+    private func deleteAnimal() {
+        // Delete animal from dataManager
+        dataManager.deleteAnimal(animal)
+        
+        // Force UI update
+        DispatchQueue.main.async {
+            dataManager.objectWillChange.send()
+        }
+        
+        // Call callback to notify parent view
+        onAnimalDeleted?()
+        
+        // Close overlay and return to animals list
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            isPresented = false
+        }
     }
 }
 
 // MARK: - Animal Main Info Card
 struct AnimalMainInfoCard: View {
     let animal: Animal
+    @ObservedObject var dataManager: FarmDataManager
     
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 15)
-                .foregroundColor(Color.blue.opacity(0.8))
-                .frame(height: 200)
+            Image("rectangle")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 320)
                 .shadow(color: .black.opacity(0.3), radius: 5, x: 0, y: 3)
             
-            VStack(spacing: 15) {
-                if animal.isHighProducer {
-                    HStack {
-            Spacer()
-                        Text("HIGH-YIELDING BIRD")
-                            .font(.custom("Chango-Regular", size: 12))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 15)
-                            .padding(.vertical, 6)
-                            .background(
-                                RoundedRectangle(cornerRadius: 15)
-                                    .foregroundColor(.black.opacity(0.5))
-                            )
-                    }
-                }
+            VStack(spacing: 12) {
+                // Верхний ряд - иконка животного
+                Text(animal.species.icon)
+                    .font(.system(size: 60))
+                    .padding(.top, 10)
                 
-                HStack {
-                    Text(animal.species.icon)
-                        .font(.system(size: 50))
+                // Название животного  
+                Text(animal.species.rawValue.uppercased())
+                    .font(.custom("Chango-Regular", size: 28))
+                    .foregroundColor(.orange)
+                    .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
+                
+                // TOTAL IN GROUP
+                VStack(spacing: 4) {
+                    Text("TOTAL IN GROUP")
+                        .font(.custom("Chango-Regular", size: 12))
+                        .foregroundColor(.white.opacity(0.8))
                     
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text(animal.species.rawValue.uppercased())
-                            .font(.custom("Chango-Regular", size: 24))
-                            .foregroundColor(.orange)
-                            .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
-                        
-                        Text("TOTAL IN GROUP:")
-                            .font(.custom("Chango-Regular", size: 10))
-                            .foregroundColor(.white.opacity(0.8))
-                        
-                        Text("\(animal.count)")
-                            .font(.custom("Chango-Regular", size: 20))
-                            .foregroundColor(.white)
-                            .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
-                    }
-                    Spacer()
+                    Text("\(animal.count)")
+                        .font(.custom("Chango-Regular", size: 32))
+                        .foregroundColor(.white)
+                        .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
                 }
                 
-                HStack(spacing: 30) {
-                    if animal.species == .chicken || animal.species == .duck {
-                        VStack {
-                            Text("EGG (PER DAY)")
-                                .font(.custom("Chango-Regular", size: 9))
-                                .foregroundColor(.white.opacity(0.8))
-                            Text("12")
-                                .font(.custom("Chango-Regular", size: 14))
-                                .foregroundColor(.white)
-                        }
-                        VStack {
-                            Text("WEEKLY EGGS")
-                                .font(.custom("Chango-Regular", size: 9))
-                                .foregroundColor(.white.opacity(0.8))
-                            Text("84")
-                                .font(.custom("Chango-Regular", size: 14))
-                                .foregroundColor(.white)
-                        }
-                    }
-                    VStack {
+                // Нижний ряд - вес и продукция
+                HStack(spacing: 60) {
+                    // Левая колонка - WEIGHT
+                    VStack(spacing: 4) {
                         Text("WEIGHT")
-                            .font(.custom("Chango-Regular", size: 9))
-                            .foregroundColor(.white.opacity(0.8))
-                        Text("15 KG")
                             .font(.custom("Chango-Regular", size: 14))
+                            .foregroundColor(.white.opacity(0.8))
+                        
+                        Text(getWeightText())
+                            .font(.custom("Chango-Regular", size: 24))
                             .foregroundColor(.white)
+                            .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
+                    }
+                    
+                    // Правая колонка - PRODUCTION
+                    VStack(spacing: 4) {
+                        Text(getProductionLabel())
+                            .font(.custom("Chango-Regular", size: 14))
+                            .foregroundColor(.white.opacity(0.8))
+                        
+                        Text(getProductionText())
+                            .font(.custom("Chango-Regular", size: 24))
+                            .foregroundColor(.white)
+                            .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
                     }
                 }
+                .padding(.bottom, 10)
             }
             .padding(20)
+        }
+    }
+    
+    // Вспомогательные функции для отображения данных
+    private func getWeightText() -> String {
+        // Получаем текущий вес с учетом всех изменений
+        let currentWeight = getCurrentWeight()
+        return "\(Int(currentWeight)) KG"
+    }
+    
+    private func getCurrentWeight() -> Double {
+        // Базовый вес одного животного по виду
+        let baseWeight: Double = {
+            switch animal.species {
+            case .cow: return 500.0
+            case .sheep: return 60.0
+            case .goat: return 40.0
+            case .pig: return 100.0
+            case .chicken: return 2.0
+            case .duck: return 3.0
+            case .turkey: return 8.0
+            case .rabbit: return 2.0
+            }
+        }()
+        
+        // Получаем все изменения веса для этого животного
+        let weightChanges = dataManager.weightChangeRecords
+            .filter { $0.animalId == animal.id }
+            .sorted { $0.date < $1.date } // Сортируем по дате
+        
+        // Считаем итоговый вес с учетом всех изменений
+        let totalWeightChange = weightChanges.reduce(0) { total, record in
+            total + record.weightChange
+        }
+        
+        // Базовый вес всей группы + изменения
+        let totalBaseWeight = baseWeight * Double(animal.count)
+        return totalBaseWeight + totalWeightChange
+    }
+    
+    private func getProductionLabel() -> String {
+        switch animal.species {
+        case .cow: return "MILK"
+        case .chicken, .duck, .turkey: return "EGGS"
+        case .sheep: return "WOOL"
+        case .goat: return "MILK"
+        default: return "PRODUCTION"
+        }
+    }
+    
+    private func getProductionText() -> String {
+        let calendar = Calendar.current
+        let today = Date()
+        let startOfToday = calendar.startOfDay(for: today)
+        let endOfToday = calendar.date(byAdding: .day, value: 1, to: startOfToday) ?? today
+        
+        switch animal.species {
+        case .cow, .goat:
+            // Подсчитываем молоко за сегодня
+            let todayMilk = dataManager.productionRecords
+                .filter { record in
+                    record.animalId == animal.id &&
+                    record.productType == .milk &&
+                    record.date >= startOfToday &&
+                    record.date < endOfToday
+                }
+                .reduce(0) { total, record in
+                    total + record.amount
+                }
+            
+            // Если нет записей за сегодня, показываем последнюю запись
+            if todayMilk == 0 {
+                let lastMilk = dataManager.productionRecords
+                    .filter { record in
+                        record.animalId == animal.id &&
+                        record.productType == .milk
+                    }
+                    .sorted { $0.date > $1.date }
+                    .first?.amount ?? 0
+                return lastMilk > 0 ? "\(Int(lastMilk)) L" : "0 L"
+            }
+            
+            return "\(Int(todayMilk)) L"
+            
+        case .chicken, .duck, .turkey:
+            // Подсчитываем ВСЕ яйца для этого животного (общая сумма)
+            let totalEggs = dataManager.productionRecords
+                .filter { record in
+                    record.animalId == animal.id &&
+                    record.productType == .eggs
+                }
+                .reduce(0) { total, record in
+                    total + record.amount
+                }
+            
+            // Добавляем отладочную информацию
+            print("🐔 DEBUG CARD: animalId = \(animal.id)")
+            print("🥚 DEBUG CARD: Общая сумма яиц = \(totalEggs)")
+            print("🥚 DEBUG CARD: Всего записей в dataManager = \(dataManager.productionRecords.count)")
+            
+            return totalEggs > 0 ? "\(Int(totalEggs)) PCS" : "0 PCS"
+            
+        case .sheep:
+            // Подсчитываем шерсть за всё время
+            let totalWool = dataManager.productionRecords
+                .filter { record in
+                    record.animalId == animal.id &&
+                    record.productType == .wool
+                }
+                .reduce(0) { total, record in
+                    total + record.amount
+                }
+            return totalWool > 0 ? "\(Int(totalWool)) KG" : "0 KG"
+            
+        default:
+            return "—"
         }
     }
 }
@@ -965,10 +1135,10 @@ struct AnimalActionButtons: View {
         HStack(spacing: 15) {
             if animal.species == .chicken || animal.species == .duck {
                 ActionButton(title: "Egg Today", color: .orange, action: onEggToday)
-                ActionButton(title: "Weight change", color: .gray, action: onWeightChange)
+                ActionButton(title: "Weight change", color: .orange, action: onWeightChange)
             } else {
                 ActionButton(title: "Add Production", color: .orange, action: onEggToday)
-                ActionButton(title: "Weight change", color: .gray, action: onWeightChange)
+                ActionButton(title: "Weight change", color: .orange, action: onWeightChange)
             }
         }
     }
@@ -983,7 +1153,7 @@ struct ActionButton: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.custom("Chango-Regular", size: 12))
+                .font(.custom("Chango-Regular", size: 10))
                 .foregroundColor(.white)
                 .padding(.horizontal, 20)
                 .padding(.vertical, 10)
@@ -1006,9 +1176,20 @@ struct ProductionStatisticsSection: View {
     
     // Фильтруем записи продукции для конкретного животного и типа продукции
     private var productionRecords: [ProductionRecord] {
-        return dataManager.productionRecords.filter { record in
+        let filtered = dataManager.productionRecords.filter { record in
             record.animalId == animal.id && record.productType == productType
         }.sorted { $0.date > $1.date } // Сортируем по дате, новые сверху
+        
+        // Добавляем отладочную информацию
+        print("📊 DEBUG SECTION: \(title)")
+        print("📊 DEBUG SECTION: animalId = \(animal.id)")
+        print("📊 DEBUG SECTION: productType = \(productType)")
+        print("📊 DEBUG SECTION: записей найдено = \(filtered.count)")
+        for (index, record) in filtered.enumerated() {
+            print("📊 DEBUG SECTION: запись \(index): \(record.amount) \(record.unit) на \(record.date)")
+        }
+        
+        return filtered
     }
     
     var body: some View {
@@ -1024,28 +1205,26 @@ struct ProductionStatisticsSection: View {
                 Button(action: {
                     onAddProduction()
                 }) {
-                    Image(systemName: "plus")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.blue)
+                    Image("my_plus")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 16)
                 }
             }
             
             if productionRecords.isEmpty {
                 // Пустое состояние
                 ZStack {
-                    RoundedRectangle(cornerRadius: 10)
-                        .foregroundColor(.blue.opacity(0.3))
-                        .frame(height: 80)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(Color.blue.opacity(0.6), style: StrokeStyle(lineWidth: 2, dash: [5]))
-                        )
+                    Image("field_empty")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 340)
                     
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("TAP PLUS")
                                 .font(.custom("Chango-Regular", size: 12))
-                                .foregroundColor(.blue)
+                                .foregroundColor(.yellow)
                                 .shadow(color: .black.opacity(0.8), radius: 1, x: 1, y: 1)
                             
                             Text("ADD YOUR FIRST RECORD")
@@ -1096,9 +1275,10 @@ struct ProductionRecordCard: View {
     
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 10)
-                .foregroundColor(.blue.opacity(0.6))
-                .frame(height: 50)
+            Image("field_empty")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 340)
             
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
@@ -1144,28 +1324,26 @@ struct WeightChangesSection: View {
                 Button(action: {
                     onAddWeightChange()
                 }) {
-                    Image(systemName: "plus")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.blue)
+                    Image("my_plus")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 16)
                 }
             }
             
             if weightChangeRecords.isEmpty {
                 // Пустое состояние
                 ZStack {
-                    RoundedRectangle(cornerRadius: 10)
-                        .foregroundColor(.gray.opacity(0.3))
-                        .frame(height: 80)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(Color.gray.opacity(0.6), style: StrokeStyle(lineWidth: 2, dash: [5]))
-                        )
+                    Image("field_empty")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 340)
                     
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("TAP PLUS")
                                 .font(.custom("Chango-Regular", size: 12))
-                                .foregroundColor(.gray)
+                                .foregroundColor(.yellow)
                                 .shadow(color: .black.opacity(0.8), radius: 1, x: 1, y: 1)
                             
                             Text("ADD WEIGHT CHANGE")
@@ -1200,9 +1378,10 @@ struct WeightChangeCard: View {
     
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 10)
-                .foregroundColor(record.isPositiveChange ? .green.opacity(0.6) : .red.opacity(0.6))
-                .frame(height: 50)
+            Image("field_empty")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 340)
                     
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
@@ -1226,6 +1405,14 @@ struct WeightChangeCard: View {
 struct EventsSection: View {
     let animal: Animal
     let dataManager: FarmDataManager
+    let onAddEvent: () -> Void
+    
+    // Фильтруем события для конкретного животного
+    private var animalEvents: [FarmEvent] {
+        return dataManager.events.filter { event in
+            event.relatedAnimalId == animal.id
+        }.sorted { $0.date > $1.date } // Сортируем по дате, новые сверху
+    }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -1238,55 +1425,114 @@ struct EventsSection: View {
                 Spacer()
                 
                 Button(action: {
-                    // TODO: Add event
+                    onAddEvent()
                 }) {
-                    Image(systemName: "plus")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.blue)
+                    Image("my_plus")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 16)
                 }
             }
             
-            AnimalEventCard(
-                title: "VACCINATION",
-                status: "TODAY",
-                description: "NEWCASTLE DISEASE, 2 DOSES"
-            )
+            if animalEvents.isEmpty {
+                // Пустое состояние
+                ZStack {
+                    Image("field_empty")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 340)
+                    
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("TAP PLUS")
+                                .font(.custom("Chango-Regular", size: 12))
+                                .foregroundColor(.yellow)
+                                .shadow(color: .black.opacity(0.8), radius: 1, x: 1, y: 1)
+                            
+                            Text("ADD YOUR FIRST EVENT")
+                                .font(.custom("Chango-Regular", size: 10))
+                                .foregroundColor(.white.opacity(0.8))
+                                .shadow(color: .black.opacity(0.8), radius: 1, x: 1, y: 1)
+                        }
+                        
+                        Spacer()
+                    }
+                    .padding(.horizontal, 15)
+                }
+            } else {
+                // Показываем события животного
+                ForEach(animalEvents.prefix(3)) { event in
+                    AnimalEventCard(event: event)
+                }
+            }
         }
     }
 }
 
 // MARK: - Animal Event Card  
 struct AnimalEventCard: View {
-    let title: String
-    let status: String
-    let description: String
+    let event: FarmEvent
+    
+    private var formattedDate: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd.MM.yyyy"
+        return formatter.string(from: event.date)
+    }
+    
+    private var statusText: String {
+        let calendar = Calendar.current
+        let today = Date()
+        
+        if calendar.isDate(event.date, inSameDayAs: today) {
+            return "TODAY"
+        } else if event.date < today {
+            return "COMPLETED"
+        } else {
+            let daysUntil = calendar.dateComponents([.day], from: today, to: event.date).day ?? 0
+            return "IN \(max(daysUntil, 0)) DAYS"
+        }
+    }
+    
+    private var statusColor: Color {
+        let calendar = Calendar.current
+        let today = Date()
+        
+        if calendar.isDate(event.date, inSameDayAs: today) {
+            return .orange
+        } else if event.date < today {
+            return .green
+        } else {
+            return .blue
+        }
+    }
     
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 10)
-                .foregroundColor(.blue.opacity(0.6))
-                .frame(height: 80)
+            Image("field_empty")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 340)
             
             HStack {
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(title)
-                        .font(.custom("Chango-Regular", size: 14))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(event.eventType.rawValue.uppercased())
+                        .font(.custom("Chango-Regular", size: 12))
                         .foregroundColor(.white)
                         .shadow(color: .black.opacity(0.8), radius: 1, x: 1, y: 1)
                     
                     HStack {
                         Circle()
-                            .fill(Color.orange)
+                            .fill(statusColor)
                             .frame(width: 8, height: 8)
                         
-                        Text(status)
-                            .font(.custom("Chango-Regular", size: 12))
-                            .foregroundColor(.orange)
+                        Text(statusText)
+                            .font(.custom("Chango-Regular", size: 10))
+                            .foregroundColor(statusColor)
                             .shadow(color: .black.opacity(0.8), radius: 1, x: 1, y: 1)
                     }
                     
-                    Text(description)
-                        .font(.custom("Chango-Regular", size: 10))
+                    Text(event.description)
+                        .font(.custom("Chango-Regular", size: 8))
                         .foregroundColor(.white.opacity(0.8))
                 }
                 Spacer()
@@ -1327,9 +1573,10 @@ struct FeedingPlanCard: View {
     
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 10)
-                .foregroundColor(.blue.opacity(0.6))
-                .frame(minHeight: 60)
+            Image("field_empty")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 340)
             
             HStack {
                 VStack(alignment: .leading, spacing: 5) {
@@ -1553,6 +1800,21 @@ struct AddEggProductionOverlay: View {
         
         dataManager.addProductionRecord(newRecord)
         print("✅ Добавлена продукция: \(count) \(productName) от \(animal.species.rawValue)")
+        print("🥚 DEBUG SAVE: animalId = \(animal.id)")
+        print("🥚 DEBUG SAVE: amount = \(newRecord.amount)")
+        print("🥚 DEBUG SAVE: date = \(newRecord.date)")
+        print("🥚 DEBUG SAVE: type = \(newRecord.productType)")
+        
+        // Принудительно обновляем UI несколько раз
+        DispatchQueue.main.async {
+            dataManager.objectWillChange.send()
+        }
+        
+        // Дополнительная задержка для обновления карточки
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            dataManager.objectWillChange.send()
+            print("🔄 Дополнительное обновление UI")
+        }
         
         isPresented = false
     }
@@ -1639,12 +1901,10 @@ struct AddWeightChangeOverlay: View {
                                         }
                                         .padding()
                                         .background(
-                                            RoundedRectangle(cornerRadius: 10)
-                                                .foregroundColor(isWeightGain ? Color.green.opacity(0.2) : Color.clear)
-                                                .overlay(
-                                                    RoundedRectangle(cornerRadius: 10)
-                                                        .stroke(isWeightGain ? Color.green : Color.white.opacity(0.3), lineWidth: 2)
-                                                )
+                                            Image("my_tab")
+                                                .resizable()
+                                                .scaledToFit()
+                                                .frame(height: 80)
                                         )
                                     }
                                     .buttonStyle(PlainButtonStyle())
@@ -1661,12 +1921,10 @@ struct AddWeightChangeOverlay: View {
                                         }
                                         .padding()
                                         .background(
-                                            RoundedRectangle(cornerRadius: 10)
-                                                .foregroundColor(!isWeightGain ? Color.red.opacity(0.2) : Color.clear)
-                                                .overlay(
-                                                    RoundedRectangle(cornerRadius: 10)
-                                                        .stroke(!isWeightGain ? Color.red : Color.white.opacity(0.3), lineWidth: 2)
-                                                )
+                                            Image("my_tab")
+                                                .resizable()
+                                                .scaledToFit()
+                                                .frame(height: 80)
                                         )
                                     }
                                     .buttonStyle(PlainButtonStyle())
@@ -1738,7 +1996,357 @@ struct AddWeightChangeOverlay: View {
         dataManager.addWeightChangeRecord(newRecord)
         print("✅ Добавлено изменение веса: \(newRecord.formattedChange) для \(animal.species.rawValue)")
         
+        // Принудительно обновляем UI
+        DispatchQueue.main.async {
+            dataManager.objectWillChange.send()
+        }
+        
         isPresented = false
+    }
+}
+
+// MARK: - Add Animal Event Overlay
+struct AddAnimalEventOverlay: View {
+    @Binding var isPresented: Bool
+    let animal: Animal
+    let dataManager: FarmDataManager
+    @State private var currentStep: EventStep = .selectType
+    @State private var selectedEventType: FarmEvent.EventType = .vaccination
+    @State private var eventDate: Date = Date()
+    @State private var eventDescription: String = ""
+    @State private var hasScrolled: Bool = false
+    
+    enum EventStep {
+        case selectType
+        case enterDetails
+    }
+    
+    // Доступные типы событий
+    private let availableEventTypes: [FarmEvent.EventType] = [.vaccination, .inspection]
+    
+    // Проверка готовности формы
+    private var isFormValid: Bool {
+        !eventDescription.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+    
+    var body: some View {
+        ZStack {
+            // Фоновое изображение
+            Image("background")
+                .resizable()
+                .ignoresSafeArea(.all)
+            
+            VStack(spacing: 0) {
+                // Header с кнопкой назад и заголовком
+                HStack {
+                    Button(action: {
+                        if currentStep == .selectType {
+                            isPresented = false
+                        } else {
+                            currentStep = .selectType
+                        }
+                    }) {
+                        Image("btn_back")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 40, height: 40)
+                    }
+                    
+                    Spacer()
+                    
+                    Text(currentStep == .selectType ? "ADD EVENT" : (selectedEventType == .vaccination ? "ADD VACCINATION" : "ADD INSPECTION"))
+                        .font(.custom("Chango-Regular", size: 16))
+                        .foregroundColor(.orange)
+                        .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
+                    
+                    Spacer()
+                    
+                    Image("btn_back")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 40, height: 40)
+                        .hidden()
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 10)
+                
+                // Контент в зависимости от шага
+                if currentStep == .selectType {
+                    // Шаг 1: Выбор типа события
+                    VStack(spacing: 0) {
+                        // Заголовок
+                        Text("SCHEDULE OF VACCINATIONS AND CARE")
+                            .font(.custom("Chango-Regular", size: 14))
+                            .foregroundColor(.white)
+                            .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 20)
+                            .padding(.top, 40)
+                        
+                        Spacer()
+                        
+                        // Кнопки типов событий
+                        HStack(spacing: 20) {
+                            Button {
+                                selectedEventType = .vaccination // Устанавливаем тип
+                                print("🔧 DEBUG: Выбрана вакцинация - selectedEventType = \(selectedEventType)")
+                                withAnimation(.easeInOut(duration: 0.3)) {
+                                    currentStep = .enterDetails
+                                }
+                            } label: {
+                                Image("vac1")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 120)
+                            }
+                            Button {
+                                selectedEventType = .inspection // Устанавливаем тип
+                                print("🔧 DEBUG: Выбрана инспекция - selectedEventType = \(selectedEventType)")
+                                withAnimation(.easeInOut(duration: 0.3)) {
+                                    currentStep = .enterDetails
+                                }
+                            } label: {
+                                Image("ins1")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 120)
+                            }
+//                            ForEach(availableEventTypes, id: \.self) { eventType in
+//                                EventTypeButton(
+//                                    eventType: eventType,
+//                                    isSelected: selectedEventType == eventType,
+//                                    action: {
+//                                        selectedEventType = eventType
+//                                        // Переходим к следующему шагу
+//                                        withAnimation(.easeInOut(duration: 0.3)) {
+//                                            currentStep = .enterDetails
+//                                        }
+//                                    }
+//                                )
+//                            }
+                        }
+                        .padding(.horizontal, 40)
+                        
+                        Spacer()
+                        
+                    }
+                } else {
+                    // Шаг 2: Ввод деталей
+                    ScrollView(.vertical, showsIndicators: false) {
+                        VStack(spacing: 0) {
+                            // Верхний отступ
+                            Spacer()
+                                .frame(height: 40)
+                            
+                                   // Иконка события
+                            Image(selectedEventType == .vaccination ? "igla" : "chel")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 80, height: 80)
+                                .onAppear {
+                                    print("🖼️ DEBUG ICON: Отображается иконка - \(selectedEventType == .vaccination ? "igla" : "chel") для события \(selectedEventType)")
+                                }
+
+                            .padding(.bottom, 30)
+                            
+                            // Поля формы
+                            VStack(spacing: 16) {
+                                // DATE
+                                VStack(alignment: .leading, spacing: 8) {
+                                    HStack {
+                                        Text("DATE")
+                                            .font(.custom("Chango-Regular", size: 13))
+                                            .foregroundColor(.white)
+                                            .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
+                                        Spacer()
+                                    }
+                                    .padding(.horizontal, 20)
+                                    
+                                    DatePickerField(selectedDate: $eventDate)
+                                }
+                                
+                                // DETAILS
+                                VStack(alignment: .leading, spacing: 8) {
+                                    HStack {
+                                        Text("DETAILS")
+                                            .font(.custom("Chango-Regular", size: 13))
+                                            .foregroundColor(.white)
+                                            .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
+                                        Spacer()
+                                    }
+                                    .padding(.horizontal, 20)
+                                    
+                                    AnimalTextField(
+                                        placeholder: getPlaceholderText(),
+                                        text: $eventDescription,
+                                        keyboardType: .default
+                                    )
+                                }
+                            }
+                            .padding(.horizontal, 20)
+                            
+                            // Отступ перед кнопкой
+                            Spacer()
+                                .frame(height: 60)
+                            
+                            // Кнопка Next
+                            Button(action: {
+                                saveEvent()
+                            }) {
+                                Image("btn_next")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(height: 55)
+                                    .opacity(isFormValid ? 1 : 0.5)
+                            }
+                            .disabled(!isFormValid)
+                            .padding(.horizontal, 20)
+                            
+                            // Нижний отступ для tab bar
+                            Spacer()
+                                .frame(height: 350)
+                        }
+                    }
+                }
+            }
+        }
+        .onTapGesture {
+            hideKeyboard()
+        }
+    }
+    
+    // Функция для скрытия клавиатуры
+    private func hideKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
+    
+    // Получение placeholder текста
+    private func getPlaceholderText() -> String {
+        switch selectedEventType {
+        case .vaccination:
+            return "NEWCASTLE DISEASE, 2 DOSES"
+        case .inspection:
+            return "GENERAL HEALTH CHECK"
+        default:
+            return "EVENT DETAILS"
+        }
+    }
+    
+    // Функция сохранения события
+    private func saveEvent() {
+        let newEvent = FarmEvent(
+            title: selectedEventType.rawValue,
+            description: eventDescription.trimmingCharacters(in: .whitespacesAndNewlines),
+            date: eventDate,
+            eventType: selectedEventType,
+            isCompleted: false,
+            reminderDate: eventDate,
+            relatedAnimalId: animal.id
+        )
+        
+        dataManager.addEvent(newEvent)
+        print("✅ Добавлено событие: \(selectedEventType.rawValue) для \(animal.species.rawValue)")
+        print("🔧 DEBUG SAVE EVENT: selectedEventType = \(selectedEventType)")
+        print("🔧 DEBUG SAVE EVENT: newEvent.eventType = \(newEvent.eventType)")
+        
+        // Принудительно обновляем UI
+        DispatchQueue.main.async {
+            dataManager.objectWillChange.send()
+        }
+        
+        isPresented = false
+    }
+}
+
+// MARK: - Event Type Button
+struct EventTypeButton: View {
+    let eventType: FarmEvent.EventType
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            ZStack {
+                Image("vac1")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 103)
+                
+                HStack(spacing: 15) {
+                    // Иконка события
+                    ZStack {
+                        Circle()
+                            .fill(Color.white.opacity(0.2))
+                            .frame(width: 50, height: 50)
+                        
+                        Image(systemName: eventType.icon)
+                            .font(.system(size: 24, weight: .medium))
+                            .foregroundColor(.white)
+                    }
+                    
+                    // Название события
+                    Text(eventType.rawValue.uppercased())
+                        .font(.custom("Chango-Regular", size: 16))
+                        .foregroundColor(.white)
+                        .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
+                    
+                    Spacer()
+                }
+                .padding(.horizontal, 20)
+            }
+        }
+        .buttonStyle(PlainButtonStyle())
+        .scaleEffect(isSelected ? 1.05 : 1.0)
+        .animation(.easeInOut(duration: 0.2), value: isSelected)
+    }
+}
+
+#Preview("Add Animal Event - Step 1") {
+    let previewDataManager = FarmDataManager()
+    let sampleAnimal = Animal(
+        species: .chicken,
+        breed: "Rhode Island Red",
+        name: nil,
+        count: 21,
+        age: "2 years",
+        healthStatus: .excellent,
+        lastVaccination: nil,
+        nextVaccination: nil,
+        notes: "High egg production",
+        isHighProducer: true
+    )
+    
+    return ZStack {
+        Color.clear
+        AddAnimalEventOverlay(
+            isPresented: .constant(true),
+            animal: sampleAnimal,
+            dataManager: previewDataManager
+        )
+    }
+}
+
+#Preview("Add Animal Event - Step 2") {
+    let previewDataManager = FarmDataManager()
+    let sampleAnimal = Animal(
+        species: .chicken,
+        breed: "Rhode Island Red",
+        name: nil,
+        count: 21,
+        age: "2 years",
+        healthStatus: .excellent,
+        lastVaccination: nil,
+        nextVaccination: nil,
+        notes: "High egg production",
+        isHighProducer: true
+    )
+    
+    return ZStack {
+        Color.clear
+        AddAnimalEventOverlayStep2Preview(
+            animal: sampleAnimal,
+            dataManager: previewDataManager
+        )
     }
 }
 
@@ -1801,7 +2409,152 @@ struct AddWeightChangeOverlay: View {
             AnimalDetailOverlay(
                 isPresented: .constant(true),
                 animal: sampleAnimal,
-                dataManager: previewDataManager
+                dataManager: previewDataManager,
+                onAnimalDeleted: nil
             )
         )
+}
+
+// MARK: - Preview Helper for Step 2
+struct AddAnimalEventOverlayStep2Preview: View {
+    let animal: Animal
+    let dataManager: FarmDataManager
+    @State private var currentStep: AddAnimalEventOverlay.EventStep = .enterDetails
+    @State private var selectedEventType: FarmEvent.EventType = .vaccination
+    @State private var eventDate: Date = Date()
+    @State private var eventDescription: String = "NEWCASTLE DISEASE, 2 DOSES"
+    @State private var hasScrolled: Bool = false
+    
+    var body: some View {
+        ZStack {
+            // Фоновое изображение
+            Image("background")
+                .resizable()
+                .ignoresSafeArea(.all)
+            
+            VStack(spacing: 0) {
+                // Header с кнопкой назад и заголовком
+                HStack {
+                    Button(action: {
+                        // Preview action
+                    }) {
+                        Image("btn_back")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 40, height: 40)
+                    }
+                    
+                    Spacer()
+                    
+                    Text("ADD VACCINATION")
+                        .font(.custom("Chango-Regular", size: 16))
+                        .foregroundColor(.orange)
+                        .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
+                    
+                    Spacer()
+                    
+                    Image("btn_back")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 40, height: 40)
+                        .hidden()
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 10)
+                
+                // Шаг 2: Ввод деталей
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        // Верхний отступ
+                        Spacer()
+                            .frame(height: 40)
+                        
+                        // Иконка события
+                        Image(selectedEventType == .vaccination ? "igla" : "chel")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 80, height: 80)
+                        .padding(.bottom, 30)
+                        
+                        // Поля формы
+                        VStack(spacing: 16) {
+                            // DATE
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack {
+                                    Text("DATE")
+                                        .font(.custom("Chango-Regular", size: 13))
+                                        .foregroundColor(.white)
+                                        .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
+                                    Spacer()
+                                }
+                                .padding(.horizontal, 20)
+                                
+                                DatePickerField(selectedDate: $eventDate)
+                            }
+                            
+                            // DETAILS
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack {
+                                    Text("DETAILS")
+                                        .font(.custom("Chango-Regular", size: 13))
+                                        .foregroundColor(.white)
+                                        .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
+                                    Spacer()
+                                }
+                                .padding(.horizontal, 20)
+                                
+                                AnimalTextField(
+                                    placeholder: "NEWCASTLE DISEASE, 2 DOSES",
+                                    text: $eventDescription,
+                                    keyboardType: .default
+                                )
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        
+                        // Отступ перед кнопкой
+                        Spacer()
+                            .frame(height: 60)
+                        
+                        // Кнопка Next
+                        Button(action: {
+                            // Preview action
+                        }) {
+                            Image("btn_next")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(height: 55)
+                        }
+                        .padding(.horizontal, 20)
+                        
+                        // Нижний отступ для tab bar
+                        Spacer()
+                            .frame(height: 350)
+                    }
+                }
+            }
+        }
+    }
+}
+
+#Preview("Event Type Buttons") {
+    VStack(spacing: 20) {
+        EventTypeButton(
+            eventType: .vaccination,
+            isSelected: true,
+            action: { }
+        )
+        
+        EventTypeButton(
+            eventType: .inspection,
+            isSelected: false,
+            action: { }
+        )
+    }
+    .padding(40)
+    .background(
+        Image("background")
+            .resizable()
+            .ignoresSafeArea(.all)
+    )
 }
