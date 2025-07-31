@@ -60,7 +60,7 @@ struct SettingsView: View {
                         }
                     )
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, 16)
                 
                 Spacer(minLength: 200)
             }
@@ -124,12 +124,12 @@ struct GameButton: View {
                         .frame(width: 10, height: 30)
                 }
             }
-            .padding(.horizontal, 25)
+            .padding(.horizontal, 16)
             .padding(.vertical, 15)
         }
            
         }
-        .buttonStyle(PlainButtonStyle())
+//        .buttonStyle(PlainButtonStyle())
     }
 }
 
@@ -167,7 +167,7 @@ struct NotificationToggleButton: View {
                 }
             }
         }
-        .padding(.horizontal, 25)
+        .padding(.horizontal, 16)
         .padding(.vertical, 15)
     }
     }
@@ -176,7 +176,6 @@ struct NotificationToggleButton: View {
 // MARK: - Journal Clear Button
 struct JournalClearButton: View {
     let action: () -> Void
-    
     var body: some View {
         ZStack {
             Image("field")
@@ -200,7 +199,7 @@ struct JournalClearButton: View {
 
             }
         }
-        .padding(.horizontal, 25)
+        .padding(.horizontal, 16)
         .padding(.vertical, 15)
     }
     }
@@ -279,16 +278,14 @@ struct UnitSettingsOverlay: View {
                     Image("unit_settings_text")
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 254)
                     
                     Spacer()
                     Image("btn_back")
                         .resizable()
-                        .scaledToFit()
                         .frame(width: 40, height: 40)
                         .hidden()
                 }
-                .padding(.horizontal, 30)
+                .padding(.horizontal, 10)
                 
                 Spacer()
                 
@@ -304,7 +301,7 @@ struct UnitSettingsOverlay: View {
                         )
                     }
                 }
-                .padding(.horizontal, 40)
+                .padding(.horizontal, 20)
                 
                 Spacer()
                 
@@ -329,10 +326,11 @@ struct UnitSettingsOverlay: View {
                     Image("btn_save")
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 350, height: 55)
+                        .frame(height: 55)
                 }
                 .padding(.bottom, 200)
             }
+            
         }
         .onAppear {
             // Загружаем текущую выбранную единицу измерения из настроек
@@ -353,7 +351,7 @@ struct UnitOverlayButton: View {
                 Image(isSelected ? "field_selected" : "field")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 340)
+                    .frame(width: 330)
                 
                 HStack {
                     Text(title)
@@ -363,7 +361,7 @@ struct UnitOverlayButton: View {
                     
                     Spacer()
                 }
-                .padding(.horizontal, 25)
+                .padding(.horizontal, 20)
                 .padding(.vertical, 15)
             }
         }
