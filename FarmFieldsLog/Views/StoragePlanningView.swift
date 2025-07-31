@@ -16,7 +16,7 @@ struct StoragePlanningView: View {
                 .resizable()
                 .ignoresSafeArea(.all)
             
-                        VStack(spacing: 0) {
+                VStack(spacing: 0) {
                 // Фиксированный заголовок
                 Image("warehouse_text")
                     .resizable()
@@ -33,6 +33,7 @@ struct StoragePlanningView: View {
                         
                         // Контент склада
                         StorageContentView(dataManager: dataManager)
+                            .id("storage_content_\(dataManager.storageItems.count)")
                         
                         // Отступ перед кнопкой
                         Spacer()
@@ -66,6 +67,14 @@ struct StoragePlanningView: View {
                 }
             }
         )
+        .onChange(of: showingAddInventoryOverlay) { isShowing in
+            if !isShowing {
+                // Когда overlay закрывается, принудительно обновляем UI
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    dataManager.objectWillChange.send()
+                }
+            }
+        }
         .sheet(isPresented: $showingAddItem) {
             AddStorageItemView()
         }
@@ -290,6 +299,7 @@ struct AddInventoryOverlay: View {
         )
         
         dataManager.addStorageItem(newItem)
+        
         isPresented = false
     }
     
@@ -451,7 +461,7 @@ extension View {
 
 // MARK: - Storage Content View
 struct StorageContentView: View {
-    let dataManager: FarmDataManager
+    @ObservedObject var dataManager: FarmDataManager
     
     var hasStorageItems: Bool {
         !dataManager.storageItems.isEmpty
@@ -483,19 +493,20 @@ struct StorageContentView: View {
 
 // MARK: - Storage Items Section
 struct StorageItemsSection: View {
-    let dataManager: FarmDataManager
+    @ObservedObject var dataManager: FarmDataManager
     
     var body: some View {
         VStack(spacing: 8) {
-            // Показываем только первые 2 элемента
-            ForEach(Array(dataManager.storageItems.prefix(2))) { item in
-                StorageItemCard(item: item)
+            // Скроллируемый список всех элементов склада
+            ScrollView(.vertical, showsIndicators: false) {
+                LazyVStack(spacing: 8) {
+                    ForEach(dataManager.storageItems) { item in
+                        StorageItemCard(item: item)
+                    }
+                }
+                .padding(.vertical, 4)
             }
-            
-            // Если элементов больше 2, показываем что есть еще
-            if dataManager.storageItems.count > 2 {
-                // TODO: Добавить индикатор "еще элементы"
-            }
+            .frame(maxHeight: 160) // Ограничиваем высоту для скролла
         }
         .padding(.horizontal, 20)
     }
@@ -885,6 +896,18 @@ struct AddStorageItemView: View {
     
     // Добавляем тестовые данные
     let testItem1 = StorageItem(
+        name: "Chicken Feed",
+        category: .feed,
+        currentStock: 20,
+        minimumStock: 5,
+        unit: "kg",
+        expirationDate: nil,
+        lastUpdated: Date(),
+        cost: 0,
+        supplier: ""
+    )
+    
+    let testItem3 = StorageItem(
         name: "Chicken Feed",
         category: .feed,
         currentStock: 20,

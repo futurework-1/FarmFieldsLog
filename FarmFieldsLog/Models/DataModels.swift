@@ -3,7 +3,7 @@ import SwiftUI
 
 // MARK: - Task Model
 struct FarmTask: Identifiable, Codable {
-    let id = UUID()
+    let id: UUID
     var title: String
     var description: String
     var isCompleted: Bool
@@ -11,6 +11,17 @@ struct FarmTask: Identifiable, Codable {
     var priority: TaskPriority
     var category: TaskCategory
     var createdDate: Date
+    
+    init(title: String, description: String, isCompleted: Bool = false, dueDate: Date, priority: TaskPriority, category: TaskCategory, createdDate: Date = Date()) {
+        self.id = UUID()
+        self.title = title
+        self.description = description
+        self.isCompleted = isCompleted
+        self.dueDate = dueDate
+        self.priority = priority
+        self.category = category
+        self.createdDate = createdDate
+    }
     
     enum TaskPriority: String, CaseIterable, Codable {
         case low = "Low"
@@ -55,7 +66,7 @@ struct FarmTask: Identifiable, Codable {
 
 // MARK: - Crop Model
 struct Crop: Identifiable, Codable {
-    let id = UUID()
+    let id: UUID
     var name: String
     var variety: String
     var plantingArea: String
@@ -66,6 +77,20 @@ struct Crop: Identifiable, Codable {
     var notes: String
     var harvestAmount: Double
     var unitOfMeasure: String
+    
+    init(name: String, variety: String, plantingArea: String, plantingDate: Date, expectedHarvestDate: Date, currentStage: CropStage, status: CropStatus, notes: String, harvestAmount: Double, unitOfMeasure: String) {
+        self.id = UUID()
+        self.name = name
+        self.variety = variety
+        self.plantingArea = plantingArea
+        self.plantingDate = plantingDate
+        self.expectedHarvestDate = expectedHarvestDate
+        self.currentStage = currentStage
+        self.status = status
+        self.notes = notes
+        self.harvestAmount = harvestAmount
+        self.unitOfMeasure = unitOfMeasure
+    }
     
     enum CropStage: String, CaseIterable, Codable {
         case planted = "Planted"
@@ -98,7 +123,7 @@ struct Crop: Identifiable, Codable {
 
 // MARK: - Animal Model
 struct Animal: Identifiable, Codable {
-    let id = UUID()
+    let id: UUID
     var species: AnimalSpecies
     var breed: String
     var name: String?
@@ -109,6 +134,20 @@ struct Animal: Identifiable, Codable {
     var nextVaccination: Date?
     var notes: String
     var isHighProducer: Bool
+    
+    init(species: AnimalSpecies, breed: String, name: String? = nil, count: Int, age: String, healthStatus: HealthStatus, lastVaccination: Date? = nil, nextVaccination: Date? = nil, notes: String, isHighProducer: Bool = false) {
+        self.id = UUID()
+        self.species = species
+        self.breed = breed
+        self.name = name
+        self.count = count
+        self.age = age
+        self.healthStatus = healthStatus
+        self.lastVaccination = lastVaccination
+        self.nextVaccination = nextVaccination
+        self.notes = notes
+        self.isHighProducer = isHighProducer
+    }
     
     enum AnimalSpecies: String, CaseIterable, Codable {
         case chicken = "Chicken"
@@ -155,13 +194,23 @@ struct Animal: Identifiable, Codable {
 
 // MARK: - Production Record Model
 struct ProductionRecord: Identifiable, Codable {
-    let id = UUID()
+    let id: UUID
     var date: Date
     var productType: ProductType
     var amount: Double
     var unit: String
     var animalId: UUID?
     var notes: String
+    
+    init(date: Date, productType: ProductType, amount: Double, unit: String, animalId: UUID? = nil, notes: String) {
+        self.id = UUID()
+        self.date = date
+        self.productType = productType
+        self.amount = amount
+        self.unit = unit
+        self.animalId = animalId
+        self.notes = notes
+    }
     
     enum ProductType: String, CaseIterable, Codable {
         case eggs = "Eggs"
@@ -194,7 +243,7 @@ struct ProductionRecord: Identifiable, Codable {
 
 // MARK: - Storage Item Model
 struct StorageItem: Identifiable, Codable {
-    let id = UUID()
+    let id: UUID
     var name: String
     var category: StorageCategory
     var currentStock: Double
@@ -204,6 +253,19 @@ struct StorageItem: Identifiable, Codable {
     var lastUpdated: Date
     var cost: Double
     var supplier: String
+    
+    init(name: String, category: StorageCategory, currentStock: Double, minimumStock: Double, unit: String, expirationDate: Date? = nil, lastUpdated: Date = Date(), cost: Double = 0, supplier: String = "") {
+        self.id = UUID()
+        self.name = name
+        self.category = category
+        self.currentStock = currentStock
+        self.minimumStock = minimumStock
+        self.unit = unit
+        self.expirationDate = expirationDate
+        self.lastUpdated = lastUpdated
+        self.cost = cost
+        self.supplier = supplier
+    }
     
     var isLowStock: Bool {
         return currentStock <= minimumStock
@@ -243,7 +305,7 @@ struct StorageItem: Identifiable, Codable {
 
 // MARK: - Event Model
 struct FarmEvent: Identifiable, Codable {
-    let id = UUID()
+    let id: UUID
     var title: String
     var description: String
     var date: Date
@@ -252,6 +314,18 @@ struct FarmEvent: Identifiable, Codable {
     var reminderDate: Date?
     var relatedAnimalId: UUID?
     var relatedCropId: UUID?
+    
+    init(title: String, description: String, date: Date, eventType: EventType, isCompleted: Bool = false, reminderDate: Date? = nil, relatedAnimalId: UUID? = nil, relatedCropId: UUID? = nil) {
+        self.id = UUID()
+        self.title = title
+        self.description = description
+        self.date = date
+        self.eventType = eventType
+        self.isCompleted = isCompleted
+        self.reminderDate = reminderDate
+        self.relatedAnimalId = relatedAnimalId
+        self.relatedCropId = relatedCropId
+    }
     
     enum EventType: String, CaseIterable, Codable {
         case veterinaryVisit = "Veterinary Visit"
