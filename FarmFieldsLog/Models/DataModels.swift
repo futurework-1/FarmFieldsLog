@@ -523,3 +523,76 @@ struct AppSettings: Codable, Equatable {
         case hectares = "ha"
     }
 }
+
+// MARK: - Farmboard Item Model
+struct FarmboardItem: Identifiable, Codable, Equatable {
+    let id: UUID
+    var name: String
+    var itemType: FarmboardItemType
+    var quantity: Int
+    var unit: String
+    var createdDate: Date
+    var status: FarmboardItemStatus
+    var notes: String
+    
+    init(name: String, itemType: FarmboardItemType, quantity: Int, unit: String, status: FarmboardItemStatus = .active, notes: String = "") {
+        self.id = UUID()
+        self.name = name
+        self.itemType = itemType
+        self.quantity = quantity
+        self.unit = unit
+        self.createdDate = Date()
+        self.status = status
+        self.notes = notes
+    }
+    
+    enum FarmboardItemType: String, CaseIterable, Codable {
+        case crop = "Crop"
+        case animal = "Animal"
+        case task = "Task"
+        case event = "Event"
+        
+        var imageName: String {
+            switch self {
+            case .crop: return "my_crop"
+            case .animal: return "btn_animal"
+            case .task: return "my_task"
+            case .event: return "my_event"
+            }
+        }
+        
+        var buttonImageName: String {
+            switch self {
+            case .crop: return "btn_crop"
+            case .animal: return "btn_animal"
+            case .task: return "btn_task"
+            case .event: return "btn_event"
+            }
+        }
+        
+        var color: Color {
+            switch self {
+            case .crop: return .green
+            case .animal: return .orange
+            case .task: return .blue
+            case .event: return .purple
+            }
+        }
+    }
+    
+    enum FarmboardItemStatus: String, CaseIterable, Codable {
+        case active = "Active"
+        case completed = "Completed"
+        case pending = "Pending"
+        case archived = "Archived"
+        
+        var color: Color {
+            switch self {
+            case .active: return .green
+            case .completed: return .blue
+            case .pending: return .orange
+            case .archived: return .gray
+            }
+        }
+    }
+}

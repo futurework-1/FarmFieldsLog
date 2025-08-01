@@ -11,6 +11,7 @@ class FarmDataManager: ObservableObject {
     @Published var weightChangeRecords: [WeightChangeRecord] = []
     @Published var storageItems: [StorageItem] = []
     @Published var events: [FarmEvent] = []
+    @Published var farmboardItems: [FarmboardItem] = []
     @Published var settings: AppSettings = AppSettings()
     
     private let userDefaults = UserDefaults.standard
@@ -38,6 +39,7 @@ class FarmDataManager: ObservableObject {
         saveToUserDefaults(weightChangeRecords, key: "weight_change_records")
         saveToUserDefaults(storageItems, key: "storage_items")
         saveToUserDefaults(events, key: "farm_events")
+        saveToUserDefaults(farmboardItems, key: "farmboard_items")
         saveToUserDefaults(settings, key: "app_settings")
     }
     
@@ -49,6 +51,7 @@ class FarmDataManager: ObservableObject {
         weightChangeRecords = loadFromUserDefaults([WeightChangeRecord].self, key: "weight_change_records") ?? []
         storageItems = loadFromUserDefaults([StorageItem].self, key: "storage_items") ?? []
         events = loadFromUserDefaults([FarmEvent].self, key: "farm_events") ?? []
+        farmboardItems = loadFromUserDefaults([FarmboardItem].self, key: "farmboard_items") ?? []
         settings = loadFromUserDefaults(AppSettings.self, key: "app_settings") ?? AppSettings()
     }
     
@@ -355,8 +358,44 @@ class FarmDataManager: ObservableObject {
         productionRecords.removeAll()
         storageItems.removeAll()
         events.removeAll()
+        farmboardItems.removeAll()
         saveData()
         print("🗑️ Все данные очищены")
+    }
+    
+    // MARK: - Farmboard Items Management
+    func addFarmboardItem(_ item: FarmboardItem) {
+        farmboardItems.append(item)
+        saveData()
+    }
+    
+    func updateFarmboardItem(_ item: FarmboardItem) {
+        if let index = farmboardItems.firstIndex(where: { $0.id == item.id }) {
+            farmboardItems[index] = item
+            saveData()
+        }
+    }
+    
+    func deleteFarmboardItem(at indexSet: IndexSet) {
+        farmboardItems.remove(atOffsets: indexSet)
+        saveData()
+    }
+    
+    func deleteFarmboardItem(_ item: FarmboardItem) {
+        farmboardItems.removeAll { $0.id == item.id }
+        saveData()
+    }
+    
+    func toggleFarmboardItemStatus(_ item: FarmboardItem) {
+        if let index = farmboardItems.firstIndex(where: { $0.id == item.id }) {
+            let currentStatus = farmboardItems[index].status
+            farmboardItems[index].status = currentStatus == .active ? .completed : .active
+            saveData()
+        }
+    }
+    
+    func getFarmboardItemsByType(_ type: FarmboardItem.FarmboardItemType) -> [FarmboardItem] {
+        return farmboardItems.filter { $0.itemType == type }
     }
     
     // Метод для добавления тестовых данных вручную (для отладки)
