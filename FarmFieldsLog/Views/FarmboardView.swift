@@ -872,7 +872,7 @@ struct CropTypeSelectionView: View {
         )
         
         dataManager.addFarmboardItem(cropItem)
-        print("✅ Добавлена культура: количество \(quantity) \(unit)")
+        print("✅ Added crop: quantity \(quantity) \(unit)")
         
         onCropSaved() // Закрываем все overlays и возвращаемся к главному экрану
     }
@@ -1049,7 +1049,7 @@ struct AnimalTypeSelectionView: View {
         )
         
         dataManager.addFarmboardItem(animalItem)
-        print("✅ Добавлено животное: \(animalType.name) количество \(quantity) \(animalType.unit)")
+        print("✅ Added animal: \(animalType.name) quantity \(quantity) \(animalType.unit)")
         
         onAnimalSaved() // Закрываем все overlays и возвращаемся к главному экрану
     }
@@ -1142,7 +1142,7 @@ struct TaskTypeSelectionView: View {
         )
         
         dataManager.addFarmboardItem(taskItem)
-        print("✅ Добавлена задача: \(taskName)")
+        print("✅ Added task: \(taskName)")
         
         onTaskSaved() // Закрываем все overlays и возвращаемся к главному экрану
     }
@@ -1155,6 +1155,7 @@ struct EventTypeSelectionView: View {
     let onEventSaved: () -> Void
     
     @State private var selectedDate: Date = Date().addingTimeInterval(3600) // Минимум через час
+    @State private var showingNotificationsDisabledAlert = false
     
     // Проверка готовности формы - максимум 15 символов и не пустое
     private var isFormValid: Bool {
@@ -1169,11 +1170,10 @@ struct EventTypeSelectionView: View {
                 // Верхний отступ
                 Spacer()
                     .frame(height: 20)
-                
-                // Иконка события (уменьшенная)
-                Image(systemName: "calendar.badge.plus")
-                    .font(.system(size: 80))
-                    .foregroundColor(.purple)
+                Image("my_event")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 120)
                 
                 // Отступ перед полем ввода
                 Spacer()
@@ -1244,6 +1244,11 @@ struct EventTypeSelectionView: View {
         .onTapGesture {
             hideKeyboard()
         }
+        .alert("Notifications Disabled", isPresented: $showingNotificationsDisabledAlert) {
+            Button("OK") { }
+        } message: {
+            Text("To create events with reminders, please enable notifications in the app settings.")
+        }
     }
     
     // Функция для скрытия клавиатуры
@@ -1253,27 +1258,39 @@ struct EventTypeSelectionView: View {
     
     // Функция сохранения события
     private func saveEvent() {
-        // Запрашиваем разрешение на уведомления
+        // Сначала проверяем настройки приложения
+        guard dataManager.settings.enableNotifications else {
+            // Уведомления отключены в настройках
+            print("❌ Attempt to create event with notifications disabled")
+            showingNotificationsDisabledAlert = true
+            return
+        }
+        
+        // Запрашиваем системное разрешение на уведомления
         requestNotificationPermission { granted in
-            if granted {
-                scheduleNotification()
-            }
-            
-            // Сохраняем событие в любом случае
-            let eventItem = FarmboardItem(
-                name: eventName,
-                itemType: .event,
-                quantity: 1,
-                unit: "pcs",
-                notes: "",
-                scheduledDate: selectedDate
-            )
-            
-            dataManager.addFarmboardItem(eventItem)
-            print("✅ Добавлено событие: \(eventName) на \(selectedDate)")
-            
             DispatchQueue.main.async {
-                onEventSaved() // Закрываем все overlays и возвращаемся к главному экрану
+                if granted {
+                    scheduleNotification()
+                    
+                    // Сохраняем событие с уведомлением
+                    let eventItem = FarmboardItem(
+                        name: eventName,
+                        itemType: .event,
+                        quantity: 1,
+                        unit: "pcs",
+                        notes: "",
+                        scheduledDate: selectedDate
+                    )
+                    
+                    dataManager.addFarmboardItem(eventItem)
+                    print("✅ Added event with notification: \(eventName) at \(selectedDate)")
+                    
+                    onEventSaved() // Закрываем все overlays и возвращаемся к главному экрану
+                } else {
+                    // Пользователь отказался от системных уведомлений - не сохраняем событие и остаемся на экране
+                    print("❌ User denied system notification permission")
+                    // Не вызываем onEventSaved(), остаемся на экране ввода
+                }
             }
         }
     }
@@ -1281,13 +1298,22 @@ struct EventTypeSelectionView: View {
     // Запрос разрешения на уведомления
     private func requestNotificationPermission(completion: @escaping (Bool) -> Void) {
         let center = UNUserNotificationCenter.current()
-        center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
+        center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+            if let error = error {
+                print("❌ Error requesting notification permission: \(error)")
+            }
             completion(granted)
         }
     }
     
     // Планирование уведомления
     private func scheduleNotification() {
+        // Дополнительная проверка настроек
+        guard dataManager.settings.enableNotifications else {
+            print("❌ Attempt to schedule notification with disabled settings")
+            return
+        }
+        
         let center = UNUserNotificationCenter.current()
         
         let content = UNMutableNotificationContent()
@@ -1302,9 +1328,9 @@ struct EventTypeSelectionView: View {
         
         center.add(request) { error in
             if let error = error {
-                print("❌ Ошибка планирования уведомления: \(error)")
+                print("❌ Error scheduling notification: \(error)")
             } else {
-                print("✅ Уведомление запланировано на \(selectedDate)")
+                print("✅ Notification scheduled for \(selectedDate)")
             }
         }
     }
@@ -1527,7 +1553,7 @@ struct FarmboardItemDetailsOverlay: View {
         )
         
         dataManager.addFarmboardItem(item)
-        print("✅ Добавлен элемент farmboard: \(itemName) типа \(itemType.rawValue)")
+        print("✅ Added farmboard item: \(itemName) of type \(itemType.rawValue)")
         
         isPresented = false
     }
@@ -1709,76 +1735,6 @@ struct FarmboardItemDetailOverlay: View {
         .environmentObject(FarmDataManager())
 }
 
-#Preview("Farmboard - With Items") {
-    let previewDataManager = FarmDataManager()
-    let sampleItems = [
-        // Crops для WEEKLY CROP блока
-        FarmboardItem(name: "Crop", itemType: .crop, quantity: 124, unit: "kg"),
-        
-        // Animals для WEEKLY CROP блока
-        FarmboardItem(name: "Milk", itemType: .animal, quantity: 60, unit: "l"),
-        FarmboardItem(name: "Egg", itemType: .animal, quantity: 1, unit: "pcs"),
-        
-        // Tasks для TASKS секции (больше для демонстрации скролла)
-        FarmboardItem(name: "Water Cucumbers", itemType: .task, quantity: 1, unit: "pcs"),
-        FarmboardItem(name: "Clean Chicken Coop", itemType: .task, quantity: 1, unit: "pcs"),
-        FarmboardItem(name: "Feed Animals", itemType: .task, quantity: 1, unit: "pcs"),
-        FarmboardItem(name: "Check Plants", itemType: .task, quantity: 1, unit: "pcs"),
-        
-        // Events для EVENT секции с разными временами
-        FarmboardItem(name: "Calf Vaccination", itemType: .event, quantity: 1, unit: "pcs", scheduledDate: Date().addingTimeInterval(3600 * 72)), // Через 3 дня
-        FarmboardItem(name: "Carrot Harvest", itemType: .event, quantity: 1, unit: "pcs", scheduledDate: Date().addingTimeInterval(3600 * 24)), // Завтра
-        FarmboardItem(name: "Plant Watering", itemType: .event, quantity: 1, unit: "pcs", scheduledDate: Date().addingTimeInterval(3600 * 2)) // Через 2 часа
-    ]
-    
-    for item in sampleItems {
-        previewDataManager.addFarmboardItem(item)
-    }
-    
-    return FarmboardView()
-        .environmentObject(previewDataManager)
-}
-
-
-#Preview("Add Task - Type Selection") {
-    ZStack {
-        Color.clear
-        FarmboardItemTypeOverlay(
-            isPresented: .constant(true),
-            selectedItemType: .task,
-            cropQuantity: .constant(""),
-            taskName: .constant(""),
-            eventName: .constant(""),
-            animalQuantity: .constant(""),
-            dataManager: FarmDataManager(),
-            onItemTypeConfirmed: {},
-            onCropSaved: {},
-            onAnimalSaved: {},
-            onTaskSaved: {},
-            onEventSaved: {}
-        )
-    }
-}
-
-#Preview("Add Event - Type Selection") {
-    ZStack {
-        Color.clear
-        FarmboardItemTypeOverlay(
-            isPresented: .constant(true),
-            selectedItemType: .event,
-            cropQuantity: .constant(""),
-            taskName: .constant(""),
-            eventName: .constant(""),
-            animalQuantity: .constant(""),
-            dataManager: FarmDataManager(),
-            onItemTypeConfirmed: {},
-            onCropSaved: {},
-            onAnimalSaved: {},
-            onTaskSaved: {},
-            onEventSaved: {}
-        )
-    }
-}
 
 #Preview("Add Task - Details") {
     ZStack {

@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 struct SettingsView: View {
     @EnvironmentObject var dataManager: FarmDataManager
@@ -34,7 +35,8 @@ struct SettingsView: View {
                     
                     // Notification Toggle
                     NotificationToggleButton(
-                        isEnabled: $dataManager.settings.enableNotifications
+                        isEnabled: $dataManager.settings.enableNotifications,
+                        dataManager: dataManager
                     )
                     
                     // Journal Clear Button
@@ -136,6 +138,7 @@ struct GameButton: View {
 // MARK: - Notification Toggle Button
 struct NotificationToggleButton: View {
     @Binding var isEnabled: Bool
+    let dataManager: FarmDataManager
     
     var body: some View {
         ZStack {
@@ -152,7 +155,25 @@ struct NotificationToggleButton: View {
             Spacer()
             
             Button(action: {
-                isEnabled.toggle()
+                if !isEnabled {
+                    // Пытаемся включить уведомления - запрашиваем разрешение
+                    requestNotificationPermission { granted in
+                        DispatchQueue.main.async {
+                            if granted {
+                                isEnabled = true
+                                dataManager.saveData()
+                                print("✅ Notifications enabled")
+                            } else {
+                                print("❌ User denied notification permission")
+                            }
+                        }
+                    }
+                } else {
+                    // Отключаем уведомления
+                    isEnabled = false
+                    dataManager.saveData()
+                    print("ℹ️ Notifications disabled")
+                }
             }) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 20)
@@ -170,6 +191,17 @@ struct NotificationToggleButton: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 15)
     }
+    }
+    
+    // Запрос разрешения на уведомления
+    private func requestNotificationPermission(completion: @escaping (Bool) -> Void) {
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+            if let error = error {
+                print("❌ Error requesting notification permission: \(error)")
+            }
+            completion(granted)
+        }
     }
 }
 

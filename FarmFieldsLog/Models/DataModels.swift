@@ -484,7 +484,7 @@ struct AppSettings: Codable, Equatable {
     var volumeUnit: VolumeUnit = .liters
     var areaUnit: AreaUnit = .squareMeters
     var selectedPrimaryUnit: PrimaryUnit = .kilograms // Основная выбранная единица измерения
-    var enableNotifications: Bool = true
+    var enableNotifications: Bool = false
     var enableTaskReminders: Bool = true
     var enableWateringReminders: Bool = true
     var enableVaccinationReminders: Bool = true
