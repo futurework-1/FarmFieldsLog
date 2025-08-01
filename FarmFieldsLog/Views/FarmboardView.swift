@@ -1,6 +1,5 @@
 import SwiftUI
 import UserNotifications
-
 struct FarmboardView: View {
     @EnvironmentObject var dataManager: FarmDataManager
     @State private var showingItemTypeSelection = false
@@ -8,26 +7,19 @@ struct FarmboardView: View {
     @State private var selectedItemType: FarmboardItem.FarmboardItemType?
     @State private var selectedItem: FarmboardItem?
     @State private var showingItemDetailView = false
-    
-    // Данные формы для передачи между экранами
     @State private var cropQuantity: String = ""
     @State private var taskName: String = ""
     @State private var eventName: String = ""
     @State private var animalQuantity: String = ""
-    
     var hasFarmboardItems: Bool {
         !dataManager.farmboardItems.isEmpty
     }
-    
     var body: some View {
         ZStack {
-            // Фоновое изображение
             Image("background")
                 .resizable()
                 .ignoresSafeArea(.all)
-            
             VStack(spacing: 0) {
-                // Фиксированный заголовок
                 HStack {
                     Spacer()
                     Image("farm_text")
@@ -37,26 +29,17 @@ struct FarmboardView: View {
                     Spacer()
                 }
                 .padding(.top, 20)
-                
-                // Скроллируемый контент
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 0) {
-                        // Верхний отступ
                         Spacer()
                             .frame(height: 20)
-                        
-                        // Контент farmboard
                         FarmboardContentView(
                             dataManager: dataManager,
                             selectedItem: $selectedItem
                         )
                         .id("farmboard_content_\(dataManager.farmboardItems.count)")
-                        
-                        // Отступ перед кнопками
                         Spacer()
                             .frame(height: 150)
-                        
-                        // Кнопки действий в сетке 2x2
                         HStack {
                             Button(action: {
                                 selectedItemType = .crop
@@ -66,8 +49,6 @@ struct FarmboardView: View {
                                     .resizable()
                                     .scaledToFit()
                             }
-                            
-                            // Кнопка Add Animal
                             Button(action: {
                                 selectedItemType = .animal
                                 showingItemTypeSelection = true
@@ -76,8 +57,6 @@ struct FarmboardView: View {
                                     .resizable()
                                     .scaledToFit()
                             }
-                            
-                            // Кнопка Add Task
                             Button(action: {
                                 selectedItemType = .task
                                 showingItemTypeSelection = true
@@ -86,8 +65,6 @@ struct FarmboardView: View {
                                     .resizable()
                                     .scaledToFit()
                             }
-                            
-                            // Кнопка Add Event
                             Button(action: {
                                 selectedItemType = .event
                                 showingItemTypeSelection = true
@@ -98,8 +75,6 @@ struct FarmboardView: View {
                             }
                         }
                         .padding(.horizontal, 20)
-                        
-                        // Нижний отступ для tab bar
                         Spacer()
                             .frame(height: 150)
                     }
@@ -107,7 +82,6 @@ struct FarmboardView: View {
             }
         }
         .overlay(
-            // Overlays
             ZStack {
                 if showingItemTypeSelection {
                     FarmboardItemTypeOverlay(
@@ -164,7 +138,6 @@ struct FarmboardView: View {
         )
         .onChange(of: showingItemTypeSelection) { isShowing in
             if !isShowing {
-                // Сбрасываем данные формы при закрытии
                 cropQuantity = ""
                 taskName = ""
                 eventName = ""
@@ -173,7 +146,6 @@ struct FarmboardView: View {
         }
         .onChange(of: showingItemDetails) { isShowing in
             if !isShowing {
-                // Сбрасываем данные формы при закрытии
                 cropQuantity = ""
                 taskName = ""
                 eventName = ""
@@ -198,64 +170,47 @@ struct FarmboardView: View {
         }
     }
 }
-
-// MARK: - Farmboard Content View
 struct FarmboardContentView: View {
     @ObservedObject var dataManager: FarmDataManager
     @Binding var selectedItem: FarmboardItem?
-    
     var hasFarmboardItems: Bool {
         !dataManager.farmboardItems.isEmpty
     }
-    
-    // Вычисляем суммарные значения по типам
     var cropItems: [FarmboardItem] {
         dataManager.farmboardItems.filter { $0.itemType == .crop }
     }
-    
     var animalItems: [FarmboardItem] {
         dataManager.farmboardItems.filter { $0.itemType == .animal }
     }
-    
     var taskItems: [FarmboardItem] {
         dataManager.farmboardItems.filter { $0.itemType == .task }
     }
-    
     var eventItems: [FarmboardItem] {
         dataManager.farmboardItems.filter { $0.itemType == .event }
     }
-    
     var totalCropKg: Int {
         cropItems.reduce(0) { $0 + $1.quantity }
     }
-    
     var totalMilkL: Int {
         animalItems.filter { $0.name == "Milk" }.reduce(0) { $0 + $1.quantity }
     }
-    
     var totalEggPcs: Int {
         animalItems.filter { $0.name == "Egg" }.reduce(0) { $0 + $1.quantity }
     }
-    
     var body: some View {
         VStack(spacing: 16) {
             if hasFarmboardItems {
-                // WEEKLY CROP блок с суммарной статистикой
                 WeeklyCropSummaryView(
                     totalCropKg: totalCropKg,
                     totalMilkL: totalMilkL,
                     totalEggPcs: totalEggPcs
                 )
-                
-                // TASKS секция
                 if !taskItems.isEmpty {
                     TasksSectionView(
                         tasks: taskItems,
                         selectedItem: $selectedItem
                     )
                 }
-                
-                // EVENT секция
                 if !eventItems.isEmpty {
                     EventsSectionView(
                         events: eventItems,
@@ -264,7 +219,6 @@ struct FarmboardContentView: View {
                     )
                 }
             } else {
-                // Пустое состояние
                 VStack(spacing: 20) {
                     Image("theresnot_text")
                         .resizable()
@@ -276,15 +230,11 @@ struct FarmboardContentView: View {
         }
     }
 }
-
-// MARK: - Farmboard Items Section
 struct FarmboardItemsSection: View {
     @ObservedObject var dataManager: FarmDataManager
     @Binding var selectedItem: FarmboardItem?
-    
     var body: some View {
         VStack(spacing: 8) {
-            // Скроллируемый список всех элементов farmboard
             ScrollView(.vertical, showsIndicators: false) {
                 LazyVStack(spacing: 8) {
                     ForEach(dataManager.farmboardItems) { item in
@@ -295,41 +245,33 @@ struct FarmboardItemsSection: View {
                 }
                 .padding(.vertical, 4)
             }
-            .frame(maxHeight: 300) // Ограничиваем высоту для скролла
+            .frame(maxHeight: 300)
         }
         .padding(.horizontal, 12)
     }
 }
-
-// MARK: - Farmboard Item Card
 struct FarmboardItemCard: View {
     let item: FarmboardItem
     let onTap: () -> Void
-    
     var body: some View {
         Button(action: onTap) {
             ZStack {
                 Image("field_empty")
                     .resizable()
                     .frame(width: 340, height: 70)
-                
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(item.itemType.rawValue.uppercased())
                             .font(.custom("Chango-Regular", size: 16))
                             .foregroundColor(.white)
                             .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
-                        
                         Text("\(item.quantity) \(item.unit)")
                             .font(.custom("Chango-Regular", size: 14))
                             .foregroundColor(.yellow)
                             .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
                     }
                     .padding(.leading, 20)
-                    
                     Spacer()
-                    
-                    // Иконка типа элемента
                     Image(item.itemType.imageName)
                         .resizable()
                         .scaledToFit()
@@ -340,18 +282,12 @@ struct FarmboardItemCard: View {
         }
     }
 }
-
-// MARK: - Weekly Crop Summary
 struct WeeklyCropSummaryView: View {
     let totalCropKg: Int
     let totalMilkL: Int
     let totalEggPcs: Int
-    
     var body: some View {
         VStack(spacing: 12) {
-            // Заголовок WEEKLY CROP
-            
-            // Фон для блока
             ZStack {
                 Image("week_rect")
                     .resizable()
@@ -362,78 +298,59 @@ struct WeeklyCropSummaryView: View {
                         .foregroundColor(.white)
                         .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
                 HStack(spacing: 0) {
-                    // Plants (kg)
                     VStack(spacing: 8) {
                         HStack {
                             Text("\(totalCropKg)")
                                 .font(.custom("Chango-Regular", size: 12))
                                 .foregroundColor(.white)
                                 .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
-                            
                             Image("crop")
                                 .resizable()
                                 .scaledToFit()
                                 .frame(width: 30)
                         }
-                        
                         Text("plants (kg)")
                             .font(.custom("Chango-Regular", size: 12))
                             .foregroundColor(.white)
                             .shadow(color: .black.opacity(0.8), radius: 1, x: 1, y: 1)
                     }
-                    
                     Spacer()
-                    
-                    // Разделитель
                     Rectangle()
                         .fill(Color.white.opacity(0.3))
                         .frame(width: 1, height: 80)
-                    
                     Spacer()
-                    
-                    // Milk (l)
                     VStack(spacing: 8) {
                         HStack {
                             Text("\(totalMilkL)")
                                 .font(.custom("Chango-Regular", size: 12))
                                 .foregroundColor(.white)
                                 .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
-                            
                             Image("milk")
                                 .resizable()
                                 .scaledToFit()
                                 .frame(width: 30)
                         }
-                        
                         Text("milk (l)")
                             .font(.custom("Chango-Regular", size: 12))
                             .foregroundColor(.white)
                             .shadow(color: .black.opacity(0.8), radius: 1, x: 1, y: 1)
                     }
-                    
                     Spacer()
-                    
-                    // Разделитель
                     Rectangle()
                         .fill(Color.white.opacity(0.3))
                         .frame(width: 1, height: 80)
-                    
                     Spacer()
-                    
-                    // Egg (pcs)
                     VStack(spacing: 8) {
                         HStack {
                             Text("\(totalEggPcs)")
                                 .font(.custom("Chango-Regular", size: 12))
                                 .foregroundColor(.white)
                                 .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
-                            
                             Image("egg")
                                 .resizable()
                                 .scaledToFit()
                                 .frame(width: 30)
                         }
-                        
                         Text("egg (pcs)")
                             .font(.custom("Chango-Regular", size: 12))
                             .foregroundColor(.white)
@@ -447,20 +364,14 @@ struct WeeklyCropSummaryView: View {
         .padding(.horizontal, 20)
     }
 }
-
-// MARK: - Tasks Section
 struct TasksSectionView: View {
     let tasks: [FarmboardItem]
     @Binding var selectedItem: FarmboardItem?
-    
-    // Сортируем по дате создания (свежие сверху)
     var sortedTasks: [FarmboardItem] {
         tasks.sorted { $0.createdDate > $1.createdDate }
     }
-    
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Заголовок TASKS
             HStack {
                 Image("tasks_text")
                     .resizable()
@@ -469,8 +380,6 @@ struct TasksSectionView: View {
                 Spacer()
             }
             .padding(.horizontal, 20)
-            
-            // Список задач (максимум 2 видимых + скролл)
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: 8) {
                     ForEach(sortedTasks) { task in
@@ -480,26 +389,21 @@ struct TasksSectionView: View {
                     }
                 }
             }
-            .frame(maxHeight: 140) // Высота для ~2 элементов (60*2 + отступы)
+            .frame(maxHeight: 140)
         }
     }
 }
-
-// MARK: - Task Item
 struct TaskItemView: View {
     let task: FarmboardItem
     let onTap: () -> Void
     @State private var isCompleted = false
-    
     var body: some View {
         Button(action: onTap) {
             ZStack {
                 Image("field_empty")
                     .resizable()
                     .frame(width: 340, height: 60)
-                
                 HStack {
-                    // Checkbox
                     Button(action: {
                         isCompleted.toggle()
                     }) {
@@ -507,7 +411,6 @@ struct TaskItemView: View {
                             Rectangle()
                                 .stroke(Color.yellow, lineWidth: 2)
                                 .frame(width: 24, height: 24)
-                            
                             if isCompleted {
                                 Image(systemName: "checkmark")
                                     .font(.system(size: 14, weight: .bold))
@@ -516,18 +419,14 @@ struct TaskItemView: View {
                         }
                     }
                     .buttonStyle(PlainButtonStyle())
-                    
                     Image("my_task")
                         .resizable()
                         .scaledToFit()
                         .frame(height: 22)
-                    
-                    // Название задачи
                     Text(task.name.uppercased())
                         .font(.custom("Chango-Regular", size: 14))
                         .foregroundColor(.white)
                         .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
-                    
                     Spacer()
                 }
                 .padding(.horizontal, 40)
@@ -535,31 +434,25 @@ struct TaskItemView: View {
         }
     }
 }
-
-// MARK: - Events Section
 struct EventsSectionView: View {
     let events: [FarmboardItem]
     @Binding var selectedItem: FarmboardItem?
     let dataManager: FarmDataManager
-    
-    // Сортируем по дате напоминания (ближайшие сверху) или по дате создания
     var sortedEvents: [FarmboardItem] {
         events.sorted { event1, event2 in
             if let date1 = event1.scheduledDate, let date2 = event2.scheduledDate {
-                return date1 < date2 // Ближайшие события сверху
+                return date1 < date2
             } else if event1.scheduledDate != nil {
-                return true // События с датой выше тех, что без даты
+                return true
             } else if event2.scheduledDate != nil {
                 return false
             } else {
-                return event1.createdDate > event2.createdDate // По дате создания
+                return event1.createdDate > event2.createdDate
             }
         }
     }
-    
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Заголовок EVENT
             HStack {
                 Image("event_text")
                     .resizable()
@@ -568,8 +461,6 @@ struct EventsSectionView: View {
                 Spacer()
             }
             .padding(.horizontal, 20)
-            
-            // Список событий (максимум 2 видимых + скролл)
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: 8) {
                     ForEach(sortedEvents) { event in
@@ -579,37 +470,28 @@ struct EventsSectionView: View {
                     }
                 }
             }
-            .frame(maxHeight: 140) // Высота для ~2 элементов (60*2 + отступы)
+            .frame(maxHeight: 140)
         }
     }
 }
-
-// MARK: - Event Item
 struct EventItemView: View {
     let event: FarmboardItem
     let dataManager: FarmDataManager
     let onTap: () -> Void
-    
-    // Вычисляем время до события
     private var timeUntilEvent: String {
         guard let scheduledDate = event.scheduledDate else {
             return "NO DATE"
         }
-        
         let timeInterval = scheduledDate.timeIntervalSince(Date())
-        
         if timeInterval <= 0 {
-            // Событие прошло - удаляем его
             DispatchQueue.main.async {
                 dataManager.deleteFarmboardItem(event)
             }
             return "EXPIRED"
         }
-        
         let days = Int(timeInterval / 86400)
         let hours = Int((timeInterval.truncatingRemainder(dividingBy: 86400)) / 3600)
         let minutes = Int((timeInterval.truncatingRemainder(dividingBy: 3600)) / 60)
-        
         if days > 0 {
             return days == 1 ? "TOMORROW" : "IN \(days) DAYS"
         } else if hours > 0 {
@@ -620,52 +502,39 @@ struct EventItemView: View {
             return "NOW"
         }
     }
-    
     var body: some View {
         Button(action: onTap) {
             ZStack {
                 Image("field_empty")
                     .resizable()
                     .frame(width: 340, height: 60)
-                
                 HStack {
-                    // Иконка события
                     Image("my_event")
                         .resizable()
                         .scaledToFit()
                         .frame(width: 30)
-                    
                     VStack(alignment: .leading, spacing: 2) {
-                        // Время до события
                         Text(timeUntilEvent)
                             .font(.custom("Chango-Regular", size: 10))
                             .foregroundColor(.yellow)
                             .shadow(color: .black.opacity(0.8), radius: 1, x: 1, y: 1)
-                        
-                        // Название события
                         Text(event.name.uppercased())
                             .font(.custom("Chango-Regular", size: 14))
                             .foregroundColor(.white)
                             .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
                     }
-                    
                     Spacer()
                 }
                 .padding(.horizontal, 40)
             }
         }
         .onAppear {
-            // Проверяем при появлении, не истекло ли время
             if let scheduledDate = event.scheduledDate, scheduledDate <= Date() {
                 dataManager.deleteFarmboardItem(event)
             }
         }
     }
 }
-
-// MARK: - Overlay Components
-
-// Главный overlay для выбора подтипа элемента
 struct FarmboardItemTypeOverlay: View {
     @Binding var isPresented: Bool
     let selectedItemType: FarmboardItem.FarmboardItemType
@@ -679,16 +548,12 @@ struct FarmboardItemTypeOverlay: View {
     let onAnimalSaved: () -> Void
     let onTaskSaved: () -> Void
     let onEventSaved: () -> Void
-    
     var body: some View {
         ZStack {
-            // Фоновое изображение
             Image("background")
                 .resizable()
                 .ignoresSafeArea(.all)
-            
             VStack(spacing: 0) {
-                // Header с кнопкой назад и заголовком
                 HStack {
                     Button(action: {
                         isPresented = false
@@ -698,15 +563,11 @@ struct FarmboardItemTypeOverlay: View {
                             .scaledToFit()
                             .frame(width: 40, height: 40)
                     }
-                    
                     Spacer()
-                    
                     Image(getHeaderImageName())
                         .resizable()
                         .scaledToFit()
-                    
                     Spacer()
-                    
                     Image("btn_back")
                         .resizable()
                         .scaledToFit()
@@ -715,10 +576,7 @@ struct FarmboardItemTypeOverlay: View {
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 10)
-                
                 Spacer()
-                
-                // Основной контент в зависимости от типа
                 switch selectedItemType {
                 case .crop:
                     CropTypeSelectionView(
@@ -745,12 +603,10 @@ struct FarmboardItemTypeOverlay: View {
                         onEventSaved: onEventSaved
                     )
                 }
-                
                 Spacer()
             }
         }
     }
-    
     private func getHeaderImageName() -> String {
         switch selectedItemType {
         case .crop: return "add_crop_text"
@@ -760,42 +616,27 @@ struct FarmboardItemTypeOverlay: View {
         }
     }
 }
-
-// MARK: - Type Selection Components
-
-// Выбор типа культуры
 struct CropTypeSelectionView: View {
     @Binding var cropQuantity: String
     let dataManager: FarmDataManager
     let onCropSaved: () -> Void
-    
     @State private var unit: String = "kg"
-    
-    // Проверка готовности формы - максимум 3 цифры и не пустое
     private var isFormValid: Bool {
         !cropQuantity.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && 
         cropQuantity.count <= 3 && 
         cropQuantity.allSatisfy { $0.isNumber }
     }
-    
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 20) {
-                // Верхний отступ
                 Spacer()
                     .frame(height: 20)
-                
-                // Иконка культуры (уменьшенная)
                 Image("crop")
                     .resizable()
                     .scaledToFit()
                     .frame(height: 120)
-                
-                // Отступ перед полем ввода
                 Spacer()
                     .frame(height: 40)
-                
-                // Текстовое поле для количества с единицами измерения
                 ZStack {
                     AnimalTextField(
                         placeholder: "QUANTITY",
@@ -803,8 +644,6 @@ struct CropTypeSelectionView: View {
                         keyboardType: .numberPad,
                         isNumericOnly: true
                     )
-                    
-                    // Отображение единиц измерения справа
                     HStack {
                         Spacer()
                         Text(unit)
@@ -815,7 +654,6 @@ struct CropTypeSelectionView: View {
                     }
                 }
                 .onChange(of: cropQuantity) { newValue in
-                    // Ограничиваем до 3 цифр и только числа
                     let filtered = newValue.filter { $0.isNumber }
                     if filtered.count > 3 {
                         cropQuantity = String(filtered.prefix(3))
@@ -823,12 +661,8 @@ struct CropTypeSelectionView: View {
                         cropQuantity = filtered
                     }
                 }
-                
-                // Отступ перед кнопкой
                 Spacer()
                     .frame(height: 30)
-                
-                // Кнопка сохранения
                 Button(action: {
                     if isFormValid {
                         saveCrop()
@@ -842,8 +676,6 @@ struct CropTypeSelectionView: View {
                 }
                 .disabled(!isFormValid)
                 .buttonStyle(PlainButtonStyle())
-                
-                // Нижний отступ для клавиатуры
                 Spacer()
                     .frame(height: 200)
             }
@@ -853,51 +685,37 @@ struct CropTypeSelectionView: View {
             hideKeyboard()
         }
     }
-    
-    // Функция для скрытия клавиатуры
     private func hideKeyboard() {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
-    
-    // Функция сохранения культуры
     private func saveCrop() {
         guard let quantity = Int(cropQuantity) else { return }
-        
         let cropItem = FarmboardItem(
-            name: "Crop", // Общее название для всех культур
+            name: "Crop",
             itemType: .crop,
             quantity: quantity,
             unit: unit,
             notes: ""
         )
-        
         dataManager.addFarmboardItem(cropItem)
-        print("✅ Added crop: quantity \(quantity) \(unit)")
-        
-        onCropSaved() // Закрываем все overlays и возвращаемся к главному экрану
+        onCropSaved()
     }
 }
-
-// Выбор типа животного
 struct AnimalTypeSelectionView: View {
     @Binding var animalQuantity: String
     let dataManager: FarmDataManager
     let onAnimalSaved: () -> Void
-    
     @State private var selectedAnimalType: AnimalType?
     @State private var showingQuantityInput = false
-    
     enum AnimalType {
         case milk
         case egg
-        
         var unit: String {
             switch self {
-            case .milk: return "l"  // литры
-            case .egg: return "pcs" // штуки
+            case .milk: return "l"
+            case .egg: return "pcs"
             }
         }
-        
         var name: String {
             switch self {
             case .milk: return "Milk"
@@ -905,34 +723,23 @@ struct AnimalTypeSelectionView: View {
             }
         }
     }
-    
-    // Проверка готовности формы - максимум 3 цифры и не пустое
     private var isFormValid: Bool {
         !animalQuantity.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && 
         animalQuantity.count <= 3 && 
         animalQuantity.allSatisfy { $0.isNumber }
     }
-    
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 20) {
-                // Верхний отступ
                 Spacer()
                     .frame(height: 40)
-                
                 if !showingQuantityInput {
-                    // Этап выбора типа животного
-                    // Иконка животного (уменьшенная)
                     Image("my_animal")
                         .resizable()
                         .scaledToFit()
                         .frame(height: 180)
-                    
-                    // Отступ перед кнопками
                     Spacer()
                         .frame(height: 30)
-                    
-                    // Кнопки выбора типа
                     HStack(spacing: 12) {
                         Button(action: {
                             selectedAnimalType = .milk
@@ -944,7 +751,6 @@ struct AnimalTypeSelectionView: View {
                                 .frame(width: 140)
                         }
                         .buttonStyle(PlainButtonStyle())
-                        
                         Button(action: {
                             selectedAnimalType = .egg
                             showingQuantityInput = true
@@ -957,19 +763,13 @@ struct AnimalTypeSelectionView: View {
                         .buttonStyle(PlainButtonStyle())
                     }
                 } else {
-                    // Этап ввода количества
                     if let animalType = selectedAnimalType {
-                        // Иконка выбранного типа животного
                         Image(animalType == .milk ? "milk" : "egg")
                             .resizable()
                             .scaledToFit()
                             .frame(height: 120)
-                        
-                        // Отступ перед полем ввода
                         Spacer()
                             .frame(height: 40)
-                        
-                        // Текстовое поле для количества с единицами измерения
                         ZStack {
                             AnimalTextField(
                                 placeholder: "QUANTITY",
@@ -977,8 +777,6 @@ struct AnimalTypeSelectionView: View {
                                 keyboardType: .numberPad,
                                 isNumericOnly: true
                             )
-                            
-                            // Отображение единиц измерения справа
                             HStack {
                                 Spacer()
                                 Text(animalType.unit)
@@ -989,7 +787,6 @@ struct AnimalTypeSelectionView: View {
                             }
                         }
                         .onChange(of: animalQuantity) { newValue in
-                            // Ограничиваем до 3 цифр и только числа
                             let filtered = newValue.filter { $0.isNumber }
                             if filtered.count > 3 {
                                 animalQuantity = String(filtered.prefix(3))
@@ -997,12 +794,8 @@ struct AnimalTypeSelectionView: View {
                                 animalQuantity = filtered
                             }
                         }
-                        
-                        // Отступ перед кнопкой
                         Spacer()
                             .frame(height: 30)
-                        
-                        // Кнопка сохранения
                         Button(action: {
                             if isFormValid {
                                 saveAnimal()
@@ -1018,8 +811,6 @@ struct AnimalTypeSelectionView: View {
                         .buttonStyle(PlainButtonStyle())
                     }
                 }
-                
-                // Нижний отступ
                 Spacer()
                     .frame(height: 100)
             }
@@ -1029,17 +820,12 @@ struct AnimalTypeSelectionView: View {
             hideKeyboard()
         }
     }
-    
-    // Функция для скрытия клавиатуры
     private func hideKeyboard() {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
-    
-    // Функция сохранения животного
     private func saveAnimal() {
         guard let quantity = Int(animalQuantity),
               let animalType = selectedAnimalType else { return }
-        
         let animalItem = FarmboardItem(
             name: animalType.name,
             itemType: .animal,
@@ -1047,60 +833,40 @@ struct AnimalTypeSelectionView: View {
             unit: animalType.unit,
             notes: ""
         )
-        
         dataManager.addFarmboardItem(animalItem)
-        print("✅ Added animal: \(animalType.name) quantity \(quantity) \(animalType.unit)")
-        
-        onAnimalSaved() // Закрываем все overlays и возвращаемся к главному экрану
+        onAnimalSaved()
     }
 }
-
-// Выбор типа задачи
 struct TaskTypeSelectionView: View {
     @Binding var taskName: String
     let dataManager: FarmDataManager
     let onTaskSaved: () -> Void
-    
-    // Проверка готовности формы - максимум 15 символов и не пустое
     private var isFormValid: Bool {
         !taskName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && taskName.count <= 15
     }
-    
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 0) {
-                // Верхний отступ
                 Spacer()
                     .frame(height: 20)
-                
-                // Иконка задачи (уменьшенная)
                 Image("my_task")
                     .resizable()
                     .scaledToFit()
                     .frame(height: 220)
-                
-                // Отступ перед полем ввода
                 Spacer()
                     .frame(height: 40)
-                
-                // Текстовое поле для названия задачи
                 AnimalTextField(
                     placeholder: "TASK NAME",
                     text: $taskName,
                     keyboardType: .default
                 )
                 .onChange(of: taskName) { newValue in
-                    // Ограничиваем до 15 символов
                     if newValue.count > 15 {
                         taskName = String(newValue.prefix(15))
                     }
                 }
-                
-                // Отступ перед кнопкой
                 Spacer()
                     .frame(height: 30)
-                
-                // Кнопка сохранения
                 Button(action: {
                     if isFormValid {
                         saveTask()
@@ -1114,8 +880,6 @@ struct TaskTypeSelectionView: View {
                 }
                 .disabled(!isFormValid)
                 .buttonStyle(PlainButtonStyle())
-                
-                // Нижний отступ для клавиатуры
                 Spacer()
                     .frame(height: 200)
             }
@@ -1125,13 +889,9 @@ struct TaskTypeSelectionView: View {
             hideKeyboard()
         }
     }
-    
-    // Функция для скрытия клавиатуры
     private func hideKeyboard() {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
-    
-    // Функция сохранения задачи
     private func saveTask() {
         let taskItem = FarmboardItem(
             name: taskName,
@@ -1140,63 +900,44 @@ struct TaskTypeSelectionView: View {
             unit: "pcs",
             notes: ""
         )
-        
         dataManager.addFarmboardItem(taskItem)
-        print("✅ Added task: \(taskName)")
-        
-        onTaskSaved() // Закрываем все overlays и возвращаемся к главному экрану
+        onTaskSaved()
     }
 }
-
-// Выбор типа события
 struct EventTypeSelectionView: View {
     @Binding var eventName: String
     let dataManager: FarmDataManager
     let onEventSaved: () -> Void
-    
-    @State private var selectedDate: Date = Date().addingTimeInterval(3600) // Минимум через час
+    @State private var selectedDate: Date = Date().addingTimeInterval(3600)
     @State private var showingNotificationsDisabledAlert = false
-    
-    // Проверка готовности формы - максимум 15 символов и не пустое
     private var isFormValid: Bool {
         !eventName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && 
         eventName.count <= 15 && 
         selectedDate > Date()
     }
-    
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 20) {
-                // Верхний отступ
                 Spacer()
                     .frame(height: 20)
                 Image("my_event")
                     .resizable()
                     .scaledToFit()
                     .frame(height: 120)
-                
-                // Отступ перед полем ввода
                 Spacer()
                     .frame(height: 30)
-                
-                // Текстовое поле для названия события
                 AnimalTextField(
                     placeholder: "EVENT NAME",
                     text: $eventName,
                     keyboardType: .default
                 )
                 .onChange(of: eventName) { newValue in
-                    // Ограничиваем до 15 символов
                     if newValue.count > 15 {
                         eventName = String(newValue.prefix(15))
                     }
                 }
-                
-                // Отступ перед DatePicker
                 Spacer()
                     .frame(height: 20)
-                
-                // Date Picker
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Text("DATE & TIME")
@@ -1206,7 +947,6 @@ struct EventTypeSelectionView: View {
                         Spacer()
                     }
                     .padding(.horizontal, 20)
-                    
                     DatePicker("", selection: $selectedDate, in: Date()..., displayedComponents: [.date, .hourAndMinute])
                         .datePickerStyle(WheelDatePickerStyle())
                         .labelsHidden()
@@ -1215,12 +955,8 @@ struct EventTypeSelectionView: View {
                         .cornerRadius(10)
                         .padding(.horizontal, 20)
                 }
-                
-                // Отступ перед кнопкой
                 Spacer()
                     .frame(height: 30)
-                
-                // Кнопка сохранения
                 Button(action: {
                     if isFormValid {
                         saveEvent()
@@ -1234,8 +970,6 @@ struct EventTypeSelectionView: View {
                 }
                 .disabled(!isFormValid)
                 .buttonStyle(PlainButtonStyle())
-                
-                // Нижний отступ для клавиатуры
                 Spacer()
                     .frame(height: 100)
             }
@@ -1250,29 +984,18 @@ struct EventTypeSelectionView: View {
             Text("To create events with reminders, please enable notifications in the app settings.")
         }
     }
-    
-    // Функция для скрытия клавиатуры
     private func hideKeyboard() {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
-    
-    // Функция сохранения события
     private func saveEvent() {
-        // Сначала проверяем настройки приложения
         guard dataManager.settings.enableNotifications else {
-            // Уведомления отключены в настройках
-            print("❌ Attempt to create event with notifications disabled")
             showingNotificationsDisabledAlert = true
             return
         }
-        
-        // Запрашиваем системное разрешение на уведомления
         requestNotificationPermission { granted in
             DispatchQueue.main.async {
                 if granted {
                     scheduleNotification()
-                    
-                    // Сохраняем событие с уведомлением
                     let eventItem = FarmboardItem(
                         name: eventName,
                         itemType: .event,
@@ -1281,62 +1004,40 @@ struct EventTypeSelectionView: View {
                         notes: "",
                         scheduledDate: selectedDate
                     )
-                    
                     dataManager.addFarmboardItem(eventItem)
-                    print("✅ Added event with notification: \(eventName) at \(selectedDate)")
-                    
-                    onEventSaved() // Закрываем все overlays и возвращаемся к главному экрану
+                    onEventSaved()
                 } else {
-                    // Пользователь отказался от системных уведомлений - не сохраняем событие и остаемся на экране
-                    print("❌ User denied system notification permission")
-                    // Не вызываем onEventSaved(), остаемся на экране ввода
                 }
             }
         }
     }
-    
-    // Запрос разрешения на уведомления
     private func requestNotificationPermission(completion: @escaping (Bool) -> Void) {
         let center = UNUserNotificationCenter.current()
         center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
             if let error = error {
-                print("❌ Error requesting notification permission: \(error)")
             }
             completion(granted)
         }
     }
-    
-    // Планирование уведомления
     private func scheduleNotification() {
-        // Дополнительная проверка настроек
         guard dataManager.settings.enableNotifications else {
-            print("❌ Attempt to schedule notification with disabled settings")
             return
         }
-        
         let center = UNUserNotificationCenter.current()
-        
         let content = UNMutableNotificationContent()
         content.title = "Farm Reminder"
         content.body = eventName
         content.sound = .default
-        
         let triggerDate = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: selectedDate)
         let trigger = UNCalendarNotificationTrigger(dateMatching: triggerDate, repeats: false)
-        
         let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
-        
         center.add(request) { error in
             if let error = error {
-                print("❌ Error scheduling notification: \(error)")
             } else {
-                print("✅ Notification scheduled for \(selectedDate)")
             }
         }
     }
 }
-
-// Overlay для ввода деталей элемента
 struct FarmboardItemDetailsOverlay: View {
     @Binding var isPresented: Bool
     let itemType: FarmboardItem.FarmboardItemType
@@ -1345,13 +1046,10 @@ struct FarmboardItemDetailsOverlay: View {
     let eventName: String
     let animalQuantity: String
     let dataManager: FarmDataManager
-    
     @State private var quantity: String = ""
     @State private var unit: String = "pcs"
     @State private var notes: String = ""
     @State private var selectedDate: Date = Date()
-    
-    // Проверка готовности формы
     private var isFormValid: Bool {
         switch itemType {
         case .crop:
@@ -1364,16 +1062,12 @@ struct FarmboardItemDetailsOverlay: View {
             return !animalQuantity.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         }
     }
-    
     var body: some View {
         ZStack {
-            // Фоновое изображение
             Image("background")
                 .resizable()
                 .ignoresSafeArea(.all)
-            
             VStack(spacing: 0) {
-                // Header с кнопкой назад и заголовком
                 HStack {
                     Button(action: {
                         isPresented = false
@@ -1383,15 +1077,11 @@ struct FarmboardItemDetailsOverlay: View {
                             .scaledToFit()
                             .frame(width: 40, height: 40)
                     }
-                    
                     Spacer()
-                    
                     Image(getHeaderImageName())
                         .resizable()
                         .scaledToFit()
-                    
                     Spacer()
-                    
                     Image("btn_back")
                         .resizable()
                         .scaledToFit()
@@ -1400,19 +1090,12 @@ struct FarmboardItemDetailsOverlay: View {
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 10)
-                
-                // Скроллируемый контент
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 0) {
-                        // Верхний отступ
                         Spacer()
                             .frame(height: 40)
-                        
-                        // Основная иконка
                         getMainIcon()
                             .padding(.bottom, 30)
-                        
-                        // Поля формы в зависимости от типа
                         VStack(spacing: 16) {
                             switch itemType {
                             case .crop:
@@ -1432,7 +1115,6 @@ struct FarmboardItemDetailsOverlay: View {
                                     .font(.custom("Chango-Regular", size: 16))
                                     .foregroundColor(.white)
                                     .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
-                                
                                 VStack(alignment: .leading, spacing: 8) {
                                     HStack {
                                         Text("DATE")
@@ -1442,7 +1124,6 @@ struct FarmboardItemDetailsOverlay: View {
                                         Spacer()
                                     }
                                     .padding(.horizontal, 20)
-                                    
                                     DatePickerField(selectedDate: $selectedDate)
                                 }
                             case .animal:
@@ -1453,12 +1134,8 @@ struct FarmboardItemDetailsOverlay: View {
                             }
                         }
                         .padding(.horizontal, 20)
-                        
-                        // Отступ перед кнопкой
                         Spacer()
                             .frame(height: 60)
-                        
-                        // Кнопка Save или Next
                         Button(action: {
                             saveItem()
                         }) {
@@ -1470,8 +1147,6 @@ struct FarmboardItemDetailsOverlay: View {
                         }
                         .disabled(!isFormValid)
                         .padding(.horizontal, 20)
-                        
-                        // Нижний отступ для tab bar
                         Spacer()
                             .frame(height: 350)
                     }
@@ -1482,7 +1157,6 @@ struct FarmboardItemDetailsOverlay: View {
             hideKeyboard()
         }
     }
-    
     private func getHeaderImageName() -> String {
         switch itemType {
         case .crop: return "add_crop_text"
@@ -1491,7 +1165,6 @@ struct FarmboardItemDetailsOverlay: View {
         case .event: return "add_event_text"
         }
     }
-    
     @ViewBuilder
     private func getMainIcon() -> some View {
         switch itemType {
@@ -1514,27 +1187,22 @@ struct FarmboardItemDetailsOverlay: View {
                 .foregroundColor(.purple)
         }
     }
-    
-    // Функция для скрытия клавиатуры
     private func hideKeyboard() {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
-    
-    // Функция сохранения элемента
     private func saveItem() {
         let itemName: String = {
             switch itemType {
             case .crop:
-                return "Crop" // Общее название для всех культур
+                return "Crop"
             case .task:
                 return taskName
             case .event:
                 return eventName
             case .animal:
-                return "Animal" // Общее название для всех животных
+                return "Animal"
             }
         }()
-        
         let itemQuantity: Int = {
             switch itemType {
             case .crop:
@@ -1543,7 +1211,6 @@ struct FarmboardItemDetailsOverlay: View {
                 return 1
             }
         }()
-        
         let item = FarmboardItem(
             name: itemName,
             itemType: itemType,
@@ -1551,31 +1218,22 @@ struct FarmboardItemDetailsOverlay: View {
             unit: unit,
             notes: notes
         )
-        
         dataManager.addFarmboardItem(item)
-        print("✅ Added farmboard item: \(itemName) of type \(itemType.rawValue)")
-        
         isPresented = false
     }
 }
-
-// Overlay для просмотра деталей элемента
 struct FarmboardItemDetailOverlay: View {
     @Binding var isPresented: Bool
     let item: FarmboardItem
     let dataManager: FarmDataManager
     let onItemDeleted: () -> Void
     @State private var showingDeleteAlert = false
-    
     var body: some View {
         ZStack {
-            // Фоновое изображение
             Image("background")
                 .resizable()
                 .ignoresSafeArea(.all)
-            
             VStack(spacing: 0) {
-                // Header с кнопками
                 HStack {
                     Button(action: {
                         isPresented = false
@@ -1584,16 +1242,12 @@ struct FarmboardItemDetailOverlay: View {
                             .font(.system(size: 20, weight: .medium))
                             .foregroundColor(.yellow)
                     }
-                    
                     Spacer()
-                    
                     Text(item.name.uppercased())
                         .font(.custom("Chango-Regular", size: 18))
                         .foregroundColor(.white)
                         .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
-                    
                     Spacer()
-                    
                     Button(action: {
                         showingDeleteAlert = true
                     }) {
@@ -1604,44 +1258,32 @@ struct FarmboardItemDetailOverlay: View {
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 10)
-                
-                // Контент
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 20) {
-                        // Основная карточка
                         ZStack {
                             Image("rectangle")
                                 .resizable()
                                 .scaledToFit()
                                 .frame(width: 320)
-                            
                             VStack(spacing: 12) {
-                                // Иконка типа
                                 Image(item.itemType.imageName)
                                     .resizable()
                                     .scaledToFit()
                                     .frame(width: 60, height: 60)
                                     .padding(.top, 10)
-                                
-                                // Название
                                 Text(item.itemType.rawValue.uppercased())
                                     .font(.custom("Chango-Regular", size: 24))
                                     .foregroundColor(.orange)
                                     .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
-                                
-                                // Количество
                                 VStack(spacing: 4) {
                                     Text("QUANTITY")
                                         .font(.custom("Chango-Regular", size: 12))
                                         .foregroundColor(.white.opacity(0.8))
-                                    
                                     Text("\(item.quantity) \(item.unit)")
                                         .font(.custom("Chango-Regular", size: 28))
                                         .foregroundColor(.white)
                                         .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
                                 }
-                                
-                                // Статус
                                 Text(item.status.rawValue.uppercased())
                                     .font(.custom("Chango-Regular", size: 14))
                                     .foregroundColor(item.status.color)
@@ -1649,21 +1291,17 @@ struct FarmboardItemDetailOverlay: View {
                                     .padding(.bottom, 10)
                             }
                         }
-                        
-                        // Дополнительная информация
                         if !item.notes.isEmpty {
                             VStack(alignment: .leading, spacing: 10) {
                                 Text("NOTES")
                                     .font(.custom("Chango-Regular", size: 14))
                                     .foregroundColor(.white)
                                     .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
-                                
                                 ZStack {
                                     Image("field_empty")
                                         .resizable()
                                         .scaledToFit()
                                         .frame(width: 340)
-                                    
                                     HStack {
                                         Text(item.notes)
                                             .font(.custom("Chango-Regular", size: 12))
@@ -1675,20 +1313,16 @@ struct FarmboardItemDetailOverlay: View {
                                 }
                             }
                         }
-                        
-                        // Дата создания
                         VStack(alignment: .leading, spacing: 10) {
                             Text("CREATED")
                                 .font(.custom("Chango-Regular", size: 14))
                                 .foregroundColor(.white)
                                 .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
-                            
                             ZStack {
                                 Image("field_empty")
                                     .resizable()
                                     .scaledToFit()
                                     .frame(width: 340)
-                                
                                 HStack {
                                     Text(formatDate(item.createdDate))
                                         .font(.custom("Chango-Regular", size: 12))
@@ -1699,8 +1333,6 @@ struct FarmboardItemDetailOverlay: View {
                                 .padding(.horizontal, 15)
                             }
                         }
-                        
-                        // Нижний отступ
                         Spacer()
                             .frame(height: 100)
                     }
@@ -1720,22 +1352,16 @@ struct FarmboardItemDetailOverlay: View {
             Text("This action cannot be undone.")
         }
     }
-    
     private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "dd.MM.yyyy HH:mm"
         return formatter.string(from: date)
     }
 }
-
-// MARK: - Previews
-
 #Preview("Farmboard - Empty State") {
     FarmboardView()
         .environmentObject(FarmDataManager())
 }
-
-
 #Preview("Add Task - Details") {
     ZStack {
         Color.clear
@@ -1750,7 +1376,6 @@ struct FarmboardItemDetailOverlay: View {
         )
     }
 }
-
 #Preview("Add Event - Details") {
     ZStack {
         Color.clear
@@ -1765,7 +1390,6 @@ struct FarmboardItemDetailOverlay: View {
         )
     }
 }
-
 #Preview("Item Detail View") {
     let sampleItem = FarmboardItem(
         name: "Wheat Harvest",
@@ -1774,7 +1398,6 @@ struct FarmboardItemDetailOverlay: View {
         unit: "kg",
         notes: "High quality winter wheat from field #3"
     )
-    
     return ZStack {
         Color.clear
         FarmboardItemDetailOverlay(

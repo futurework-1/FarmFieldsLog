@@ -1,29 +1,23 @@
 import SwiftUI
-
 struct AddTaskView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var dataManager: FarmDataManager
-    
     @State private var title = ""
     @State private var description = ""
     @State private var dueDate = Date()
     @State private var priority = FarmTask.TaskPriority.medium
     @State private var category = FarmTask.TaskCategory.other
-    
     var body: some View {
         NavigationView {
             Form {
                 Section(header: Text("Task Details")) {
                     TextField("Task Title", text: $title)
-                    
                     TextField("Description", text: $description, axis: .vertical)
                         .lineLimit(3...6)
                 }
-                
                 Section(header: Text("Schedule")) {
                     DatePicker("Due Date", selection: $dueDate, displayedComponents: [.date, .hourAndMinute])
                 }
-                
                 Section(header: Text("Classification")) {
                     Picker("Priority", selection: $priority) {
                         ForEach(FarmTask.TaskPriority.allCases, id: \.self) { priority in
@@ -36,7 +30,6 @@ struct AddTaskView: View {
                             .tag(priority)
                         }
                     }
-                    
                     Picker("Category", selection: $category) {
                         ForEach(FarmTask.TaskCategory.allCases, id: \.self) { category in
                             HStack {
@@ -56,7 +49,6 @@ struct AddTaskView: View {
                         dismiss()
                     }
                 }
-                
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") {
                         saveTask()
@@ -66,7 +58,6 @@ struct AddTaskView: View {
             }
         }
     }
-    
     private func saveTask() {
         let newTask = FarmTask(
             title: title,
@@ -77,12 +68,10 @@ struct AddTaskView: View {
             category: category,
             createdDate: Date()
         )
-        
         dataManager.addTask(newTask)
         dismiss()
     }
 }
-
 #Preview {
     AddTaskView()
         .environmentObject(FarmDataManager.shared)

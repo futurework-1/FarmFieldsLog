@@ -1,5 +1,4 @@
 import SwiftUI
-
 struct StoragePlanningView: View {
     @EnvironmentObject var dataManager: FarmDataManager
     @State private var showingAddItem = false
@@ -7,34 +6,24 @@ struct StoragePlanningView: View {
     @State private var showingAddEventOverlay = false
     @State private var showingAddTaskOverlay = false
     @State private var selectedSeason: String = "SPRING"
-    
     var hasStorageItems: Bool {
         !dataManager.storageItems.isEmpty
     }
-    
     var body: some View {
         ZStack {
-            // Фоновое изображение
             Image("background")
                 .resizable()
                 .ignoresSafeArea(.all)
-            
                 VStack(spacing: 0) {
-                // Фиксированный заголовок
                 Image("warehouse_text")
                     .resizable()
                     .scaledToFit()
                     .frame(height: 105)
                     .padding(.top, 20)
-                
-                // Скроллируемый контент
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 0) {
-                        // Верхний отступ
                         Spacer()
                             .frame(height: 20)
-                        
-                        // Контент склада
                         StorageContentView(
                             dataManager: dataManager,
                             selectedSeason: $selectedSeason,
@@ -46,12 +35,8 @@ struct StoragePlanningView: View {
                             }
                         )
                         .id("storage_content_\(dataManager.storageItems.count)")
-                        
-                        // Отступ перед кнопкой
                         Spacer()
                             .frame(height: 30)
-                        
-                        // Кнопка Add inventory
                         Button(action: {
                             showingAddInventoryOverlay = true
                         }) {
@@ -60,8 +45,6 @@ struct StoragePlanningView: View {
                                 .scaledToFit()
                                 .frame(width: 340)
                         }
-                        
-                        // Нижний отступ для tab bar
                         Spacer()
                             .frame(height: 150)
                     }
@@ -69,7 +52,6 @@ struct StoragePlanningView: View {
             }
         }
         .overlay(
-            // Add Inventory Overlay
             Group {
                 if showingAddInventoryOverlay {
                     AddInventoryOverlay(
@@ -91,7 +73,6 @@ struct StoragePlanningView: View {
         )
         .onChange(of: showingAddInventoryOverlay) { isShowing in
             if !isShowing {
-                // Когда overlay закрывается, принудительно обновляем UI
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     dataManager.objectWillChange.send()
                 }
@@ -99,7 +80,6 @@ struct StoragePlanningView: View {
         }
         .onChange(of: showingAddEventOverlay) { isShowing in
             if !isShowing {
-                // Когда event overlay закрывается, принудительно обновляем UI
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     dataManager.objectWillChange.send()
                 }
@@ -107,7 +87,6 @@ struct StoragePlanningView: View {
         }
         .onChange(of: showingAddTaskOverlay) { isShowing in
             if !isShowing {
-                // Когда task overlay закрывается, принудительно обновляем UI
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     dataManager.objectWillChange.send()
                 }
@@ -118,8 +97,6 @@ struct StoragePlanningView: View {
         }
     }
 }
-
-// MARK: - Add Inventory Overlay
 struct AddInventoryOverlay: View {
     @Binding var isPresented: Bool
     let dataManager: FarmDataManager
@@ -128,25 +105,17 @@ struct AddInventoryOverlay: View {
     @State private var quantity: String = ""
     @State private var isQuantityFieldFocused: Bool = false
     @State private var hasScrolled: Bool = false
-    
-    // Проверка готовности формы
     private var isFormValid: Bool {
         !itemName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         !quantity.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
-    
-    // Доступные категории как на скриншоте
     private let availableCategories: [StorageItem.StorageCategory] = [.feed, .fertilizer, .seeds, .tools]
-    
     var body: some View {
         ZStack {
-            // Фоновое изображение
             Image("background")
                 .resizable()
                 .ignoresSafeArea(.all)
-            
         VStack(spacing: 0) {
-                // Header с кнопкой назад и заголовком (фиксированный)
                 HStack {
                     Button(action: {
                         isPresented = false
@@ -156,14 +125,11 @@ struct AddInventoryOverlay: View {
                             .scaledToFit()
                             .frame(width: 40, height: 40)
                     }
-                    
                     Spacer()
-                    
                     Image("add_invent_text")
                         .resizable()
                         .scaledToFit()
                         .frame(height: 46)
-                    
                     Spacer()
                     Image("btn_back")
                         .resizable()
@@ -173,17 +139,11 @@ struct AddInventoryOverlay: View {
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 10)
-                
-                // Скроллируемый контент
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 0) {
-                        // Верхний отступ
                         Spacer()
                             .frame(height: 10)
-                        
-                        // Секция CATEGORY
                         VStack(spacing: 16) {
-                            // Заголовок CATEGORY
                             HStack {
                                 Text("CATEGORY")
                                     .font(.custom("Chango-Regular", size: 13))
@@ -192,8 +152,6 @@ struct AddInventoryOverlay: View {
                                 Spacer()
                             }
                             .padding(.horizontal, 20)
-                            
-                            // Кнопки категорий
                             VStack(spacing: 8) {
                                 ForEach(availableCategories, id: \.self) { category in
                                     CategoryButton(
@@ -201,7 +159,6 @@ struct AddInventoryOverlay: View {
                                         isSelected: selectedCategory == category,
                                         action: {
                                             selectedCategory = category
-                                            // Скрываем клавиатуру при выборе категории
                                             hideKeyboard()
                                         }
                                     )
@@ -209,21 +166,14 @@ struct AddInventoryOverlay: View {
                             }
                             .padding(.horizontal, 20)
                         }
-                        
-                        // Отступ между секциями
                 Spacer()
                             .frame(height: 10)
-                        
-                        // Текстфилды
                         VStack(spacing: 16) {
-                            // ITEM NAME
                             GameTextField(
                                 placeholder: "ITEM NAME",
                                 text: $itemName,
                                 characterLimit: 20
                             )
-                            
-                            // QUANTITY
                             GameTextField(
                                 placeholder: "QUANTITY",
                                 text: $quantity,
@@ -239,12 +189,8 @@ struct AddInventoryOverlay: View {
                             )
                         }
                         .padding(.horizontal, 20)
-                        
-                        // Отступ перед кнопкой
                 Spacer()
                             .frame(height: 50)
-                        
-                                        // Кнопка SAVE
                 Button(action: {
                     saveItem()
                 }) {
@@ -256,8 +202,6 @@ struct AddInventoryOverlay: View {
                         }
                         .disabled(!isFormValid)
                         .padding(.horizontal, 20)
-                        
-                        // Нижний отступ для tab bar и клавиатуры
                         Spacer()
                             .frame(height: 350)
                     }
@@ -271,15 +215,10 @@ struct AddInventoryOverlay: View {
                         }
                 )
             }
-            
-            // Подсказка о прокрутке
             if !hasScrolled {
                 VStack {
                     Spacer()
-                    
                     ZStack {
-                        
-                        // Анимированная подсказка
                         VStack(spacing: 8) {
                             Image(systemName: "chevron.down")
                                 .font(.system(size: 16, weight: .semibold))
@@ -291,65 +230,51 @@ struct AddInventoryOverlay: View {
                                         .repeatForever(autoreverses: true),
                                     value: hasScrolled
                                 )
-                            
                             Text("Scroll for Next")
                                 .font(.custom("Chango-Regular", size: 12))
                                 .foregroundColor(.white)
                                 .opacity(0.7)
                                 .shadow(color: .black.opacity(0.8), radius: 1, x: 1, y: 1)
                         }
-                        .padding(.bottom, 120) // Отступ от tab bar
+                        .padding(.bottom, 120)
                     }
                 }
-                .allowsHitTesting(false) // Не блокируем взаимодействие с элементами под подсказкой
+                .allowsHitTesting(false)
             }
         }
         .onTapGesture {
-            // Скрываем клавиатуру при тапе на пустое место
             hideKeyboard()
         }
     }
-    
-    // Функция для скрытия клавиатуры
     private func hideKeyboard() {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
-    
-    // Функция сохранения элемента склада
     private func saveItem() {
-        // Очищаем единицы измерения из поля quantity
         let cleanQuantity = quantity.replacingOccurrences(of: " \(dataManager.settings.selectedPrimaryUnit.shortName)", with: "")
-        
         guard let quantityValue = Double(cleanQuantity), quantityValue > 0 else {
             return
         }
-        
         let newItem = StorageItem(
             name: itemName.trimmingCharacters(in: .whitespacesAndNewlines),
             category: selectedCategory,
             currentStock: quantityValue,
-            minimumStock: quantityValue * 0.2, // Устанавливаем минимум как 20% от текущего количества
+            minimumStock: quantityValue * 0.2,
             unit: dataManager.settings.selectedPrimaryUnit.shortName,
             expirationDate: nil,
             lastUpdated: Date(),
             cost: 0,
             supplier: ""
         )
-        
         dataManager.addStorageItem(newItem)
-        
         isPresented = false
     }
-    
     private func handleQuantityFocusChange(_ focused: Bool) {
         if !focused && !quantity.isEmpty {
-            // Когда поле теряет фокус, добавляем единицу измерения если её нет
             let unit = dataManager.settings.selectedPrimaryUnit.shortName
             if !quantity.hasSuffix(" \(unit)") {
                 quantity = quantity + " \(unit)"
             }
         } else if focused {
-            // Когда поле получает фокус, убираем единицу измерения для редактирования
             let unit = dataManager.settings.selectedPrimaryUnit.shortName
             if quantity.hasSuffix(" \(unit)") {
                 quantity = String(quantity.dropLast(unit.count + 1))
@@ -357,35 +282,27 @@ struct AddInventoryOverlay: View {
         }
     }
 }
-
-// MARK: - Category Button
 struct CategoryButton: View {
     let category: StorageItem.StorageCategory
     let isSelected: Bool
     let action: () -> Void
-    
     var body: some View {
         Button(action: action) {
             ZStack {
-                // Фоновое изображение для категории
                 Image(categoryImageName(for: category))
                     .resizable()
                     .scaledToFit()
                     .frame(width: 340)
-                    .opacity(isSelected ? 1.0 : 0.7) // Выделение выбранной категории
-                
+                    .opacity(isSelected ? 1.0 : 0.7)
                 HStack(spacing: 12) {
-                    // Иконка категории
                     Text(categoryEmoji(for: category))
                         .font(.system(size: 24))
                         .hidden()
-                    
                     Text(category.rawValue.uppercased())
                         .font(.custom("Chango-Regular", size: 16))
                         .foregroundColor(.white)
                         .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
                         .hidden()
-                    
                 Spacer()
                 }
                 .padding(.horizontal, 25)
@@ -393,10 +310,9 @@ struct CategoryButton: View {
             }
         }
         .buttonStyle(PlainButtonStyle())
-        .scaleEffect(isSelected ? 1.02 : 1.0) // Легкое увеличение выбранной категории
+        .scaleEffect(isSelected ? 1.02 : 1.0)
         .animation(.easeInOut(duration: 0.2), value: isSelected)
     }
-    
     private func categoryImageName(for category: StorageItem.StorageCategory) -> String {
         switch category {
         case .feed: return "field_feed"
@@ -406,7 +322,6 @@ struct CategoryButton: View {
         default: return "field_empty"
         }
     }
-    
     private func categoryEmoji(for category: StorageItem.StorageCategory) -> String {
         switch category {
         case .feed: return "🌾"
@@ -417,8 +332,6 @@ struct CategoryButton: View {
         }
     }
 }
-
-// MARK: - Game Text Field
 struct GameTextField: View {
     let placeholder: String
     @Binding var text: String
@@ -429,15 +342,12 @@ struct GameTextField: View {
     var isFocused: Binding<Bool>?
     var onFocusChange: ((Bool) -> Void)?
     var isNumericOnly: Bool = false
-    
     var body: some View {
         ZStack {
-            // Фоновое изображение для текстфилда
             Image("field_empty")
                 .resizable()
                 .scaledToFit()
                 .frame(width: 340)
-            
                     HStack {
                 TextField("", text: $text, onEditingChanged: { editing in
                     isFocused?.wrappedValue = editing
@@ -453,25 +363,17 @@ struct GameTextField: View {
                     .keyboardType(keyboardType)
                     .onChange(of: text) { newValue in
                         var filteredValue = newValue
-                        
-                        // Если это поле только для цифр, оставляем только цифры
                         if isNumericOnly {
                             filteredValue = newValue.filter { $0.isNumber }
                         }
-                        
-                        // Ограничение символов
                         if filteredValue.count > characterLimit {
                             filteredValue = String(filteredValue.prefix(characterLimit))
                         }
-                        
-                        // Обновляем только если значение изменилось
                         if filteredValue != newValue {
                             text = filteredValue
                         }
                     }
-                        
                         Spacer()
-                        
                 if isQuantityField && !unit.isEmpty && !(isFocused?.wrappedValue ?? false) {
                     Text(unit)
                         .font(.custom("Chango-Regular", size: 14))
@@ -483,53 +385,40 @@ struct GameTextField: View {
         }
     }
 }
-
 extension View {
     func placeholder<Content: View>(
         when shouldShow: Bool,
         alignment: Alignment = .leading,
         @ViewBuilder placeholder: () -> Content) -> some View {
-
         ZStack(alignment: alignment) {
             placeholder().opacity(shouldShow ? 1 : 0)
             self
         }
     }
 }
-
-// MARK: - Storage Content View
 struct StorageContentView: View {
     @ObservedObject var dataManager: FarmDataManager
     @Binding var selectedSeason: String
     let onAddEvent: () -> Void
     let onAddTask: () -> Void
-    
     var hasStorageItems: Bool {
         !dataManager.storageItems.isEmpty
     }
-    
     var body: some View {
         VStack(spacing: 0) {
             if hasStorageItems {
-                // Список складских элементов
                 StorageItemsSection(dataManager: dataManager)
-                
-                // Секция EVENT
                 EventSection(
                     onAddEvent: onAddEvent,
                     dataManager: dataManager
                 )
-                
-                // Сезоны (горизонтальный скролл)
                 SeasonsSection(selectedSeason: $selectedSeason)
-                
                 TasksSection(
                     dataManager: dataManager,
                     selectedSeason: selectedSeason,
                     onAddTask: onAddTask
                 )
             } else {
-                // Пустое состояние
                 Image("theresnot_text")
                     .resizable()
                     .scaledToFit()
@@ -538,14 +427,10 @@ struct StorageContentView: View {
         }
     }
 }
-
-// MARK: - Storage Items Section
 struct StorageItemsSection: View {
     @ObservedObject var dataManager: FarmDataManager
-    
     var body: some View {
         VStack(spacing: 8) {
-            // Скроллируемый список всех элементов склада
             ScrollView(.vertical, showsIndicators: false) {
                 LazyVStack(spacing: 8) {
                     ForEach(dataManager.storageItems) { item in
@@ -554,39 +439,31 @@ struct StorageItemsSection: View {
                 }
                 .padding(.vertical, 4)
             }
-            .frame(maxHeight: 150) // Ограничиваем высоту для скролла
+            .frame(maxHeight: 150)
         }
         .padding(.horizontal, 12)
     }
 }
-
-// MARK: - Storage Item Card
 struct StorageItemCard: View {
     let item: StorageItem
-    
     var body: some View {
         ZStack {
             Image("field")
                 .resizable()
                 .scaledToFit()
                 .frame(width: 340)
-            
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(item.name.uppercased())
                         .font(.custom("Chango-Regular", size: 16))
                         .foregroundColor(.white)
                         .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
-                    
                     Text("\(String(format: "%.0f", item.currentStock)) \(item.unit)")
                         .font(.custom("Chango-Regular", size: 14))
                         .foregroundColor(.yellow)
                         .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
                 }
-                
                 Spacer()
-                
-                // Индикатор категории
                 Image(categoryIconName(for: item.category))
                     .resizable()
                     .scaledToFit()
@@ -596,7 +473,6 @@ struct StorageItemCard: View {
             .padding(.vertical, 15)
         }
     }
-    
     private func categoryIconName(for category: StorageItem.StorageCategory) -> String {
         switch category {
         case .feed: return "0icon"
@@ -607,23 +483,17 @@ struct StorageItemCard: View {
         }
     }
 }
-
-// MARK: - Event Section
 struct EventSection: View {
     let onAddEvent: () -> Void
     @ObservedObject var dataManager: FarmDataManager
-    
     var body: some View {
         VStack(spacing: 8) {
-            // Заголовок EVENT с кнопкой плюс
             HStack {
                 Image("event_text")
                     .resizable()
                     .scaledToFit()
                     .frame(height: 12)
-                
                 Spacer()
-                
                 Button(action: {
                     onAddEvent()
                 }) {
@@ -634,36 +504,29 @@ struct EventSection: View {
                 }
             }
             .padding(.horizontal, 32)
-            
-            // События
             if dataManager.events.isEmpty {
-                // Пустое состояние
                 ZStack {
                     Image("field")
                         .resizable()
                         .scaledToFit()
                         .frame(width: 340)
-                    
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("TAP PLUS")
                                 .font(.custom("Chango-Regular", size: 11))
                                 .foregroundColor(.yellow)
                                 .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
-                            
                             Text("ADD YOU FIRST REMINDER!")
                                 .font(.custom("Chango-Regular", size: 12))
                                 .foregroundColor(.white)
                                 .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
                         }
-                        
                         Spacer()
                     }
                     .padding(.horizontal, 46)
                     .padding(.vertical, 15)
                 }
             } else {
-                // Показываем события
                 ScrollView(.vertical, showsIndicators: false) {
                     LazyVStack(spacing: 8) {
                         ForEach(dataManager.events) { event in
@@ -672,43 +535,36 @@ struct EventSection: View {
                     }
                     .padding(.vertical, 4)
                 }
-                .frame(maxHeight: 160) // Ограничиваем высоту для скролла
+                .frame(maxHeight: 160)
             }
         }
         .padding(.top, 20)
     }
 }
-
-// MARK: - Storage Event Card
 struct StorageEventCard: View {
     let event: FarmEvent
-    
     private var formattedDate: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "dd.MM.yyyy"
         return formatter.string(from: event.date)
     }
-    
     var body: some View {
         ZStack {
             Image("field")
                 .resizable()
                 .scaledToFit()
                 .frame(width: 340)
-            
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(event.title.uppercased())
                         .font(.custom("Chango-Regular", size: 11))
                         .foregroundColor(.yellow)
                         .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
-                    
                     Text(formattedDate)
                         .font(.custom("Chango-Regular", size: 12))
                         .foregroundColor(.white)
                         .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
                 }
-                
                 Spacer()
             }
             .padding(.horizontal, 46)
@@ -716,13 +572,10 @@ struct StorageEventCard: View {
         }
     }
 }
-
-// MARK: - Seasons Section
 struct SeasonsSection: View {
     @Binding var selectedSeason: String
     let seasons = ["SPRING", "SUMMER", "AUTUMN", "WINTER"]
     let seasonEmojis = ["🌸", "☀️", "🍂", "❄️"]
-    
     var body: some View {
         VStack(spacing: 8) {
             ScrollView(.horizontal, showsIndicators: false) {
@@ -744,28 +597,22 @@ struct SeasonsSection: View {
         .padding(.top, 20)
     }
 }
-
-// MARK: - Season Button
 struct SeasonButton: View {
     let title: String
     let emoji: String
     let isSelected: Bool
     let action: () -> Void
-    
     var body: some View {
         Button(action: action) {
             ZStack {
-                // Используем разные изображения для выбранного и невыбранного сезона
                 Image(isSelected ? "my_around_tab" : "my_tab")
                     .resizable()
                     .scaledToFit()
                     .frame(width: 110)
                     .opacity(isSelected ? 1.0 : 0.7)
-                
                 HStack(spacing: 2) {
                     Text(emoji)
                         .font(.system(size: 16))
-                    
                     Text(title)
                         .font(.custom("Chango-Regular", size: 12))
                         .foregroundColor(isSelected ? .yellow : .white)
@@ -778,20 +625,15 @@ struct SeasonButton: View {
         .buttonStyle(PlainButtonStyle())
     }
 }
-
-// MARK: - Tasks Section
 struct TasksSection: View {
     @ObservedObject var dataManager: FarmDataManager
     let selectedSeason: String
     let onAddTask: () -> Void
-    
-    // Фильтрация задач по выбранному сезону
     private var filteredTasks: [FarmTask] {
         return dataManager.tasks.filter { task in
             task.description.contains(selectedSeason)
         }
     }
-    
     var body: some View {
         VStack(spacing: 8) {
             HStack {
@@ -800,9 +642,7 @@ struct TasksSection: View {
                     .scaledToFit()
                     .frame(height: 12)
                     .hidden()
-                
                 Spacer()
-                
                 Button(action: {
                     onAddTask()
                 }) {
@@ -813,37 +653,29 @@ struct TasksSection: View {
                 }
             }
             .padding(.horizontal, 10)
-            
-            // Отображение задач
             if filteredTasks.isEmpty {
-                // Пустое состояние
                 ZStack {
                     Image("field")
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 320) // Уменьшили ширину как в TaskCard
-                    
+                        .frame(width: 320)
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("TAP PLUS")
                                 .font(.custom("Chango-Regular", size: 12))
                                 .foregroundColor(.yellow)
                                 .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
-                            
                             Text("AND ADD YOUR FIRST EVENT")
                                 .font(.custom("Chango-Regular", size: 10))
                                 .foregroundColor(.white)
                                 .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
                         }
-                        
                         Spacer()
-                        
-                        // Индикатор текущего сезона
                         ZStack {
                             Image("my_around_tab")
                                 .resizable()
                                 .scaledToFit()
-                                .frame(width: 75) // Уменьшили как в TaskCard
+                                .frame(width: 75)
                             HStack(spacing: 4) {
                                 Text(seasonEmoji(for: selectedSeason))
                                     .font(.system(size: 10))
@@ -854,11 +686,10 @@ struct TasksSection: View {
                             }
                         }
                     }
-                    .padding(.horizontal, 20) // Уменьшили отступы как в TaskCard
+                    .padding(.horizontal, 20)
                     .padding(.vertical, 15)
                 }
             } else {
-                // Показываем задачи для выбранного сезона
                 ScrollView(.vertical, showsIndicators: false) {
                     LazyVStack(spacing: 8) {
                         ForEach(filteredTasks) { task in
@@ -867,14 +698,12 @@ struct TasksSection: View {
                     }
                     .padding(.vertical, 4)
                 }
-                .frame(maxHeight: 200) // Увеличиваем высоту для скролла
+                .frame(maxHeight: 200)
             }
         }
         .padding(.top, 25)
         .padding(.horizontal, 20)
     }
-    
-    // Получение эмодзи для сезона
     private func seasonEmoji(for season: String) -> String {
         switch season {
         case "SPRING": return "🌸"
@@ -885,12 +714,9 @@ struct TasksSection: View {
         }
     }
 }
-
-// MARK: - Task Card
 struct TaskCard: View {
     let task: FarmTask
     let selectedSeason: String
-    
     private var seasonEmoji: String {
         switch selectedSeason {
         case "SPRING": return "🌸"
@@ -900,8 +726,6 @@ struct TaskCard: View {
         default: return "🌸"
         }
     }
-    
-    // Извлекаем месяц из описания задачи
     private var monthFromDescription: String {
         let parts = task.description.components(separatedBy: " in ")
         if parts.count > 1 {
@@ -909,21 +733,18 @@ struct TaskCard: View {
         }
         return ""
     }
-    
     var body: some View {
         ZStack {
             Image("field")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 320) // Уменьшили ширину для лучшего размещения
-            
+                .frame(width: 320)
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(task.title.uppercased())
                         .font(.custom("Chango-Regular", size: 12))
                         .foregroundColor(.yellow)
                         .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
-                    
                     if !monthFromDescription.isEmpty {
                         Text(monthFromDescription.uppercased())
                             .font(.custom("Chango-Regular", size: 10))
@@ -931,15 +752,12 @@ struct TaskCard: View {
                             .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
                     }
                 }
-                
                 Spacer()
-                
-                // Индикатор сезона
                 ZStack {
                     Image("my_around_tab")
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 75) // Немного уменьшили
+                        .frame(width: 75)
                     HStack(spacing: 4) {
                         Text(seasonEmoji)
                             .font(.system(size: 10))
@@ -950,18 +768,14 @@ struct TaskCard: View {
                     }
                 }
             }
-            .padding(.horizontal, 20) // Уменьшили отступы
+            .padding(.horizontal, 20)
             .padding(.vertical, 15)
         }
     }
 }
-
-// MARK: - Поддерживающие компоненты (используются в AddStorageItemView)
-
 struct StorageItemDetailView: View {
     @Environment(\.dismiss) private var dismiss
     let item: StorageItem
-    
     var body: some View {
         NavigationView {
             Text("Storage Item Detail View - Coming Soon")
@@ -976,7 +790,6 @@ struct StorageItemDetailView: View {
         }
     }
 }
-
 struct AddStorageItemView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var dataManager: FarmDataManager
@@ -989,13 +802,11 @@ struct AddStorageItemView: View {
     @State private var hasExpirationDate = false
     @State private var cost: Double = 0
     @State private var supplier = ""
-    
     var body: some View {
         NavigationView {
             Form {
                 Section(header: Text("Item Details")) {
                     TextField("Item Name", text: $name)
-                    
                     Picker("Category", selection: $category) {
                         ForEach(StorageItem.StorageCategory.allCases, id: \.self) { category in
                             HStack {
@@ -1006,10 +817,8 @@ struct AddStorageItemView: View {
                             .tag(category)
                         }
                     }
-                    
                     TextField("Unit", text: $unit)
                 }
-                
                 Section(header: Text("Stock Levels")) {
                     HStack {
                         Text("Current Stock")
@@ -1018,7 +827,6 @@ struct AddStorageItemView: View {
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
                     }
-                    
                     HStack {
                         Text("Minimum Stock")
                         Spacer()
@@ -1027,7 +835,6 @@ struct AddStorageItemView: View {
                             .multilineTextAlignment(.trailing)
                     }
                 }
-                
                 Section(header: Text("Additional Info")) {
                     HStack {
                         Text("Cost")
@@ -1036,11 +843,8 @@ struct AddStorageItemView: View {
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
                     }
-                    
                     TextField("Supplier", text: $supplier)
-                    
                     Toggle("Has Expiration Date", isOn: $hasExpirationDate)
-                    
                     if hasExpirationDate {
                         DatePicker(
                             "Expiration Date",
@@ -1061,7 +865,6 @@ struct AddStorageItemView: View {
                         dismiss()
                     }
                 }
-                
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") {
                         saveItem()
@@ -1071,7 +874,6 @@ struct AddStorageItemView: View {
             }
         }
         .onAppear {
-            // Устанавливаем единицу измерения из настроек
             unit = dataManager.settings.selectedPrimaryUnit.shortName
         }
         .onChange(of: hasExpirationDate) { newValue in
@@ -1080,7 +882,6 @@ struct AddStorageItemView: View {
             }
         }
     }
-    
     private func saveItem() {
         let newItem = StorageItem(
             name: name,
@@ -1093,34 +894,25 @@ struct AddStorageItemView: View {
             cost: cost,
             supplier: supplier
         )
-        
         dataManager.addStorageItem(newItem)
         dismiss()
     }
 }
-
-// MARK: - Add Event Overlay
 struct AddEventOverlay: View {
     @Binding var isPresented: Bool
     let dataManager: FarmDataManager
     @State private var eventTitle: String = ""
     @State private var selectedDate: Date = Date()
     @State private var hasScrolled: Bool = false
-    
-    // Проверка готовности формы
     private var isFormValid: Bool {
         !eventTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
-    
     var body: some View {
         ZStack {
-            // Фоновое изображение
             Image("background")
                 .resizable()
                 .ignoresSafeArea(.all)
-            
             VStack(spacing: 0) {
-                // Header с кнопкой назад и заголовком (фиксированный)
                 HStack {
                     Button(action: {
                         isPresented = false
@@ -1130,13 +922,10 @@ struct AddEventOverlay: View {
                             .scaledToFit()
                             .frame(width: 40, height: 40)
                     }
-                    
                     Spacer()
-                    
                     Image("add_text")
                         .resizable()
                         .scaledToFit()
-                    
                     Spacer()
                     Image("btn_back")
                         .resizable()
@@ -1146,15 +935,10 @@ struct AddEventOverlay: View {
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 10)
-                
-                // Скроллируемый контент
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 0) {
-                        // Верхний отступ
                         Spacer()
                             .frame(height: 40)
-                        
-                        // EVENT метка
                         HStack {
                             Text("EVENT")
                                 .font(.custom("Chango-Regular", size: 13))
@@ -1164,28 +948,19 @@ struct AddEventOverlay: View {
                         }
                         .padding(.horizontal, 20)
                         .padding(.bottom, 16)
-                        
-                        // Текстфилды
                         VStack(spacing: 16) {
-                            // TITLE
                             GameTextField(
                                 placeholder: "TITLE",
                                 text: $eventTitle,
                                 characterLimit: 20
                             )
-                            
-                            // DATE
                             EventDateField(
                                 selectedDate: $selectedDate
                             )
                         }
                         .padding(.horizontal, 20)
-                        
-                        // Отступ перед кнопкой
                         Spacer()
                             .frame(height: 60)
-                        
-                        // Кнопка SAVE
                         Button(action: {
                             saveEvent()
                         }) {
@@ -1197,8 +972,6 @@ struct AddEventOverlay: View {
                         }
                         .disabled(!isFormValid)
                         .padding(.horizontal, 20)
-                        
-                        // Нижний отступ для tab bar
                         Spacer()
                             .frame(height: 350)
                     }
@@ -1214,17 +987,12 @@ struct AddEventOverlay: View {
             }
         }
         .onTapGesture {
-            // Скрываем клавиатуру при тапе на пустое место
             hideKeyboard()
         }
     }
-    
-    // Функция для скрытия клавиатуры
     private func hideKeyboard() {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
-    
-    // Функция сохранения события
     private func saveEvent() {
         let newEvent = FarmEvent(
             title: eventTitle.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -1234,51 +1002,40 @@ struct AddEventOverlay: View {
             isCompleted: false,
             reminderDate: selectedDate
         )
-        
         dataManager.addEvent(newEvent)
         isPresented = false
     }
 }
-
-// MARK: - Event Date Field
 struct EventDateField: View {
     @Binding var selectedDate: Date
-    
     private var formattedDate: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "dd.MM.yyyy"
         return formatter.string(from: selectedDate)
     }
-    
     var body: some View {
         ZStack {
-            // Фоновое изображение для текстфилда
             Image("field_empty")
                 .resizable()
                 .scaledToFit()
                 .frame(width: 340)
-            
             HStack {
                 DatePicker("", selection: $selectedDate, displayedComponents: .date)
                     .datePickerStyle(CompactDatePickerStyle())
                     .labelsHidden()
                     .tint(.white)
-                    .colorScheme(.dark) // Темная схема для лучшей видимости
-                
+                    .colorScheme(.dark)
                 Spacer()
-                
                 Text(formattedDate)
                     .font(.custom("Chango-Regular", size: 16))
                     .foregroundColor(.white)
-                    .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2) // Тень для лучшей читаемости
+                    .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
             }
             .padding(.horizontal, 25)
             .padding(.vertical, 15)
         }
     }
 }
-
-// MARK: - Add Task Overlay
 struct AddTaskOverlay: View {
     @Binding var isPresented: Bool
     let dataManager: FarmDataManager
@@ -1287,37 +1044,27 @@ struct AddTaskOverlay: View {
     @State private var selectedMonth: String = ""
     @State private var isMonthDropdownOpen: Bool = false
     @State private var hasScrolled: Bool = false
-    
-    // Доступные сезоны
     private let seasons = [
         ("SPRING", "🌸"),
         ("SUMMER", "☀️"),
         ("AUTUMN", "🍂"),
         ("WINTER", "❄️")
     ]
-    
-    // Доступные месяцы
     private let months = [
         "JANUARY", "FEBRUARY", "MARCH", "APRIL",
         "MAY", "JUNE", "JULY", "AUGUST",
         "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"
     ]
-    
-    // Проверка готовности формы
     private var isFormValid: Bool {
         !taskTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         !selectedMonth.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
-    
     var body: some View {
         ZStack {
-            // Фоновое изображение
             Image("background")
                 .resizable()
                 .ignoresSafeArea(.all)
-            
             VStack(spacing: 0) {
-                // Header с кнопкой назад и заголовком (фиксированный)
                 HStack {
                     Button(action: {
                         isPresented = false
@@ -1327,15 +1074,11 @@ struct AddTaskOverlay: View {
                             .scaledToFit()
                             .frame(width: 40, height: 40)
                     }
-                    
                     Spacer()
-                    
-                    // ADD TASK заголовок
                     Image("add_task_my")
                         .resizable()
                         .scaledToFit()
                         .frame(height: 32)
-                    
                     Spacer()
                     Image("btn_back")
                         .resizable()
@@ -1344,15 +1087,10 @@ struct AddTaskOverlay: View {
                         .hidden()
                 }
                 .padding(.horizontal, 20)
-                
-                // Скроллируемый контент
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 0) {
-                        // Верхний отступ
                         Spacer()
                             .frame(height: 40)
-                        
-                        // EVENT метка
                         HStack {
                             Text("EVENT")
                                 .font(.custom("Chango-Regular", size: 13))
@@ -1362,8 +1100,6 @@ struct AddTaskOverlay: View {
                         }
                         .padding(.horizontal, 20)
                         .padding(.bottom, 16)
-                        
-                        // TITLE поле
                         GameTextField(
                             placeholder: "TITLE",
                             text: $taskTitle,
@@ -1371,8 +1107,6 @@ struct AddTaskOverlay: View {
                         )
                         .padding(.horizontal, 20)
                         .padding(.bottom, 16)
-                        
-                        // SEASON секция
                         VStack(spacing: 16) {
                             HStack {
                                 Text("SEASON")
@@ -1382,8 +1116,6 @@ struct AddTaskOverlay: View {
                                 Spacer()
                             }
                             .padding(.horizontal, 20)
-                            
-                            // Кнопки сезонов
                             LazyVGrid(columns: [
                                 GridItem(.flexible()),
                                 GridItem(.flexible())
@@ -1402,8 +1134,6 @@ struct AddTaskOverlay: View {
                             .padding(.horizontal, 20)
                         }
                         .padding(.bottom, 16)
-                        
-                        // MONTH поле
                         VStack(spacing: 0) {
                             MonthDropdownField(
                                 selectedMonth: $selectedMonth,
@@ -1412,12 +1142,8 @@ struct AddTaskOverlay: View {
                             )
                         }
                         .padding(.horizontal, 20)
-                        
-                        // Отступ перед кнопкой
                         Spacer()
                             .frame(height: 60)
-                        
-                        // Кнопка SAVE
                         Button(action: {
                             saveTask()
                         }) {
@@ -1429,8 +1155,6 @@ struct AddTaskOverlay: View {
                         }
                         .disabled(!isFormValid)
                         .padding(.horizontal, 20)
-                        
-                        // Нижний отступ для tab bar
                         Spacer()
                             .frame(height: 350)
                     }
@@ -1446,10 +1170,7 @@ struct AddTaskOverlay: View {
             }
         }
         .onTapGesture {
-            // Скрываем клавиатуру при тапе на пустое место
             hideKeyboard()
-            
-            // Закрываем dropdown если он открыт
             if isMonthDropdownOpen {
                 withAnimation(.easeInOut(duration: 0.3)) {
                     isMonthDropdownOpen = false
@@ -1457,13 +1178,9 @@ struct AddTaskOverlay: View {
             }
         }
     }
-    
-    // Функция для скрытия клавиатуры
     private func hideKeyboard() {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
-    
-    // Функция сохранения задачи
     private func saveTask() {
         let newTask = FarmTask(
             title: taskTitle.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -1473,25 +1190,20 @@ struct AddTaskOverlay: View {
             category: .other,
             createdDate: Date()
         )
-        
         dataManager.addTask(newTask)
         isPresented = false
     }
 }
-
-// MARK: - Season Selection Button
 struct SeasonSelectionButton: View {
     let title: String
     let emoji: String
     let isSelected: Bool
     let action: () -> Void
-    
     var body: some View {
         Button(action: action) {
             HStack(spacing: 8) {
                 Text(emoji)
                     .font(.system(size: 16))
-                
                 Text(title)
                     .font(.custom("Chango-Regular", size: 12))
                     .foregroundColor(.white)
@@ -1513,16 +1225,12 @@ struct SeasonSelectionButton: View {
         .animation(.easeInOut(duration: 0.2), value: isSelected)
     }
 }
-
-// MARK: - Month Dropdown Field
 struct MonthDropdownField: View {
     @Binding var selectedMonth: String
     @Binding var isOpen: Bool
     let months: [String]
-    
     var body: some View {
         VStack(spacing: 0) {
-            // Main field
             Button(action: {
                 withAnimation(.easeInOut(duration: 0.3)) {
                     isOpen.toggle()
@@ -1533,14 +1241,11 @@ struct MonthDropdownField: View {
                         .resizable()
                         .scaledToFit()
                         .frame(width: 340)
-                    
                     HStack {
                         Text(selectedMonth.isEmpty ? "MONTH" : selectedMonth)
                             .font(.custom("Chango-Regular", size: 16))
                             .foregroundColor(selectedMonth.isEmpty ? .gray : .white)
-                        
                         Spacer()
-                        
                         Image(systemName: "chevron.down")
                             .font(.system(size: 12, weight: .medium))
                             .foregroundColor(.white)
@@ -1552,8 +1257,6 @@ struct MonthDropdownField: View {
                 }
             }
             .buttonStyle(PlainButtonStyle())
-            
-            // Dropdown list
             if isOpen {
                 VStack(spacing: 0) {
                     ScrollView(.vertical, showsIndicators: true) {
@@ -1580,7 +1283,6 @@ struct MonthDropdownField: View {
                                     )
                                 }
                                 .buttonStyle(PlainButtonStyle())
-                                
                                 if month != months.last {
                                     Divider()
                                         .background(Color.white.opacity(0.3))
@@ -1606,16 +1308,12 @@ struct MonthDropdownField: View {
         }
     }
 }
-
 #Preview("Storage Planning - Empty State") {
     StoragePlanningView()
         .environmentObject(FarmDataManager.shared)
 }
-
 #Preview("Storage Planning - With Data") {
     let dataManager = FarmDataManager.shared
-    
-    // Добавляем тестовые данные
     let testItem1 = StorageItem(
         name: "Chicken Feed",
         category: .feed,
@@ -1627,7 +1325,6 @@ struct MonthDropdownField: View {
         cost: 0,
         supplier: ""
     )
-    
     let testItem3 = StorageItem(
         name: "Chicken Feed",
         category: .feed,
@@ -1639,7 +1336,6 @@ struct MonthDropdownField: View {
         cost: 0,
         supplier: ""
     )
-    
     let testItem2 = StorageItem(
         name: "Corn Seeds",
         category: .seeds,
@@ -1651,7 +1347,6 @@ struct MonthDropdownField: View {
         cost: 0,
         supplier: ""
     )
-    
     return StoragePlanningView()
         .environmentObject(dataManager)
         .onAppear {
@@ -1662,7 +1357,6 @@ struct MonthDropdownField: View {
             }
         }
 }
-
 #Preview("Storage Planning - Add Inventory Overlay") {
     StoragePlanningView()
         .environmentObject(FarmDataManager.shared)
@@ -1673,7 +1367,6 @@ struct MonthDropdownField: View {
             )
         )
 }
-
 #Preview("Storage Planning - Add Event Overlay") {
     StoragePlanningView()
         .environmentObject(FarmDataManager.shared)
@@ -1684,7 +1377,6 @@ struct MonthDropdownField: View {
             )
         )
 }
-
 #Preview("Storage Planning - Add Task Overlay") {
     StoragePlanningView()
         .environmentObject(FarmDataManager.shared)

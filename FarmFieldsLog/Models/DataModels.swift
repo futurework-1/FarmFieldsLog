@@ -1,7 +1,5 @@
 import Foundation
 import SwiftUI
-
-// MARK: - Task Model
 struct FarmTask: Identifiable, Codable {
     let id: UUID
     var title: String
@@ -11,7 +9,6 @@ struct FarmTask: Identifiable, Codable {
     var priority: TaskPriority
     var category: TaskCategory
     var createdDate: Date
-    
     init(title: String, description: String, isCompleted: Bool = false, dueDate: Date, priority: TaskPriority, category: TaskCategory, createdDate: Date = Date()) {
         self.id = UUID()
         self.title = title
@@ -22,13 +19,11 @@ struct FarmTask: Identifiable, Codable {
         self.category = category
         self.createdDate = createdDate
     }
-    
     enum TaskPriority: String, CaseIterable, Codable {
         case low = "Low"
         case medium = "Medium"
         case high = "High"
         case urgent = "Urgent"
-        
         var color: Color {
             switch self {
             case .low: return .green
@@ -38,7 +33,6 @@ struct FarmTask: Identifiable, Codable {
             }
         }
     }
-    
     enum TaskCategory: String, CaseIterable, Codable {
         case watering = "Watering"
         case feeding = "Feeding"
@@ -48,7 +42,6 @@ struct FarmTask: Identifiable, Codable {
         case veterinary = "Veterinary"
         case planting = "Planting"
         case other = "Other"
-        
         var icon: String {
             switch self {
             case .watering: return "drop.fill"
@@ -63,8 +56,6 @@ struct FarmTask: Identifiable, Codable {
         }
     }
 }
-
-// MARK: - Crop Model
 struct Crop: Identifiable, Codable, Equatable {
     let id: UUID
     var name: String
@@ -78,7 +69,6 @@ struct Crop: Identifiable, Codable, Equatable {
     var harvestAmount: Double
     var unitOfMeasure: String
     var cropType: CropType
-    
     init(name: String, variety: String, plantingArea: String, plantingDate: Date, expectedHarvestDate: Date, currentStage: CropStage, status: CropStatus, notes: String, harvestAmount: Double, unitOfMeasure: String, cropType: CropType = .vegetables) {
         self.id = UUID()
         self.name = name
@@ -93,14 +83,12 @@ struct Crop: Identifiable, Codable, Equatable {
         self.unitOfMeasure = unitOfMeasure
         self.cropType = cropType
     }
-    
     enum CropType: String, CaseIterable, Codable {
         case vegetables = "Vegetables"
         case fruits = "Fruits"
         case grains = "Grains"
         case herbs = "Herbs"
         case flowers = "Flowers"
-        
         var icon: String {
             switch self {
             case .vegetables: return "🥕"
@@ -110,7 +98,6 @@ struct Crop: Identifiable, Codable, Equatable {
             case .flowers: return "🌸"
             }
         }
-        
         var commonCrops: [String] {
             switch self {
             case .vegetables:
@@ -125,11 +112,8 @@ struct Crop: Identifiable, Codable, Equatable {
                 return ["ROSES", "TULIPS", "SUNFLOWERS", "DAISIES", "LAVENDER", "MARIGOLD"]
             }
         }
-        
-        // Функция возвращает правильный эмодзи для конкретного растения
         static func getEmojiForCrop(_ cropName: String) -> String {
             switch cropName.uppercased() {
-            // Овощи
             case "CARROTS": return "🥕"
             case "POTATOES": return "🥔"
             case "TOMATOES": return "🍅"
@@ -139,44 +123,33 @@ struct Crop: Identifiable, Codable, Equatable {
             case "CABBAGE": return "🥬"
             case "BROCCOLI": return "🥦"
             case "CORN": return "🌽"
-            
-            // Фрукты
             case "STRAWBERRIES": return "🍓"
             case "APPLES": return "🍎"
             case "GRAPES": return "🍇"
             case "BANANAS": return "🍌"
             case "ORANGES": return "🍊"
             case "WATERMELON": return "🍉"
-            
-            // Зерновые
             case "WHEAT": return "🌾"
             case "RICE": return "🌾"
             case "BARLEY": return "🌾"
             case "OATS": return "🌾"
             case "RYE": return "🌾"
-            
-            // Травы
             case "BASIL": return "🌿"
             case "PARSLEY": return "🌿"
             case "THYME": return "🌿"
             case "OREGANO": return "🌿"
             case "ROSEMARY": return "🌿"
             case "MINT": return "🌿"
-            
-            // Цветы
             case "ROSES": return "🌹"
             case "TULIPS": return "🌷"
             case "SUNFLOWERS": return "🌻"
             case "DAISIES": return "🌼"
             case "LAVENDER": return "💜"
             case "MARIGOLD": return "🌻"
-            
-            // По умолчанию
             default: return "🌱"
             }
         }
     }
-    
     enum CropStage: String, CaseIterable, Codable {
         case planted = "Planted"
         case germinating = "Germinating"
@@ -186,14 +159,12 @@ struct Crop: Identifiable, Codable, Equatable {
         case readyToHarvest = "Ready to Harvest"
         case harvested = "Harvested"
     }
-    
     enum CropStatus: String, CaseIterable, Codable {
         case healthy = "Healthy"
         case needsAttention = "Needs Attention"
         case diseased = "Diseased"
         case pest = "Pest Problem"
         case drought = "Drought Stress"
-        
         var color: Color {
             switch self {
             case .healthy: return .green
@@ -205,8 +176,6 @@ struct Crop: Identifiable, Codable, Equatable {
         }
     }
 }
-
-// MARK: - Animal Model
 struct Animal: Identifiable, Codable, Equatable {
     let id: UUID
     var species: AnimalSpecies
@@ -219,7 +188,6 @@ struct Animal: Identifiable, Codable, Equatable {
     var nextVaccination: Date?
     var notes: String
     var isHighProducer: Bool
-    
     init(species: AnimalSpecies, breed: String, name: String? = nil, count: Int, age: String, healthStatus: HealthStatus, lastVaccination: Date? = nil, nextVaccination: Date? = nil, notes: String, isHighProducer: Bool = false) {
         self.id = UUID()
         self.species = species
@@ -233,7 +201,6 @@ struct Animal: Identifiable, Codable, Equatable {
         self.notes = notes
         self.isHighProducer = isHighProducer
     }
-    
     enum AnimalSpecies: String, CaseIterable, Codable {
         case chicken = "Chicken"
         case cow = "Cow"
@@ -243,7 +210,6 @@ struct Animal: Identifiable, Codable, Equatable {
         case duck = "Duck"
         case turkey = "Turkey"
         case rabbit = "Rabbit"
-        
         var icon: String {
             switch self {
             case .chicken: return "🐔"
@@ -257,14 +223,12 @@ struct Animal: Identifiable, Codable, Equatable {
             }
         }
     }
-    
     enum HealthStatus: String, CaseIterable, Codable {
         case excellent = "Excellent"
         case good = "Good"
         case fair = "Fair"
         case poor = "Poor"
         case sick = "Sick"
-        
         var color: Color {
             switch self {
             case .excellent: return .green
@@ -276,8 +240,6 @@ struct Animal: Identifiable, Codable, Equatable {
         }
     }
 }
-
-// MARK: - Production Record Model
 struct ProductionRecord: Identifiable, Codable {
     let id: UUID
     var date: Date
@@ -286,7 +248,6 @@ struct ProductionRecord: Identifiable, Codable {
     var unit: String
     var animalId: UUID?
     var notes: String
-    
     init(date: Date, productType: ProductType, amount: Double, unit: String, animalId: UUID? = nil, notes: String) {
         self.id = UUID()
         self.date = date
@@ -296,14 +257,12 @@ struct ProductionRecord: Identifiable, Codable {
         self.animalId = animalId
         self.notes = notes
     }
-    
     enum ProductType: String, CaseIterable, Codable {
         case eggs = "Eggs"
         case milk = "Milk"
         case meat = "Meat"
         case wool = "Wool"
         case honey = "Honey"
-        
         var icon: String {
             switch self {
             case .eggs: return "circle.fill"
@@ -313,7 +272,6 @@ struct ProductionRecord: Identifiable, Codable {
             case .honey: return "hexagon.fill"
             }
         }
-        
         var color: Color {
             switch self {
             case .eggs: return .yellow
@@ -325,8 +283,6 @@ struct ProductionRecord: Identifiable, Codable {
         }
     }
 }
-
-// MARK: - Storage Item Model
 struct StorageItem: Identifiable, Codable {
     let id: UUID
     var name: String
@@ -338,7 +294,6 @@ struct StorageItem: Identifiable, Codable {
     var lastUpdated: Date
     var cost: Double
     var supplier: String
-    
     init(name: String, category: StorageCategory, currentStock: Double, minimumStock: Double, unit: String, expirationDate: Date? = nil, lastUpdated: Date = Date(), cost: Double = 0, supplier: String = "") {
         self.id = UUID()
         self.name = name
@@ -351,11 +306,9 @@ struct StorageItem: Identifiable, Codable {
         self.cost = cost
         self.supplier = supplier
     }
-    
     var isLowStock: Bool {
         return currentStock <= minimumStock
     }
-    
     enum StorageCategory: String, CaseIterable, Codable {
         case feed = "Feed"
         case fertilizer = "Fertilizer"
@@ -363,7 +316,6 @@ struct StorageItem: Identifiable, Codable {
         case medicine = "Medicine"
         case tools = "Tools"
         case supplies = "Supplies"
-        
         var icon: String {
             switch self {
             case .feed: return "leaf.fill"
@@ -374,7 +326,6 @@ struct StorageItem: Identifiable, Codable {
             case .supplies: return "box.fill"
             }
         }
-        
         var color: Color {
             switch self {
             case .feed: return .green
@@ -387,8 +338,6 @@ struct StorageItem: Identifiable, Codable {
         }
     }
 }
-
-// MARK: - Event Model
 struct FarmEvent: Identifiable, Codable {
     let id: UUID
     var title: String
@@ -399,7 +348,6 @@ struct FarmEvent: Identifiable, Codable {
     var reminderDate: Date?
     var relatedAnimalId: UUID?
     var relatedCropId: UUID?
-    
     init(title: String, description: String, date: Date, eventType: EventType, isCompleted: Bool = false, reminderDate: Date? = nil, relatedAnimalId: UUID? = nil, relatedCropId: UUID? = nil) {
         self.id = UUID()
         self.title = title
@@ -411,7 +359,6 @@ struct FarmEvent: Identifiable, Codable {
         self.relatedAnimalId = relatedAnimalId
         self.relatedCropId = relatedCropId
     }
-    
     enum EventType: String, CaseIterable, Codable {
         case veterinaryVisit = "Veterinary Visit"
         case vaccination = "Vaccination"
@@ -421,7 +368,6 @@ struct FarmEvent: Identifiable, Codable {
         case inspection = "Inspection"
         case treatment = "Treatment"
         case other = "Other"
-        
         var icon: String {
             switch self {
             case .veterinaryVisit: return "stethoscope"
@@ -434,7 +380,6 @@ struct FarmEvent: Identifiable, Codable {
             case .other: return "calendar"
             }
         }
-        
         var color: Color {
             switch self {
             case .veterinaryVisit: return .blue
@@ -449,16 +394,13 @@ struct FarmEvent: Identifiable, Codable {
         }
     }
 }
-
-// MARK: - Weight Change Record Model
 struct WeightChangeRecord: Identifiable, Codable {
     let id: UUID
     var animalId: UUID
     var date: Date
-    var weightChange: Double // Положительное для прибавки, отрицательное для убавки
+    var weightChange: Double
     var unit: String
     var notes: String
-    
     init(animalId: UUID, date: Date, weightChange: Double, unit: String, notes: String = "") {
         self.id = UUID()
         self.animalId = animalId
@@ -467,34 +409,28 @@ struct WeightChangeRecord: Identifiable, Codable {
         self.unit = unit
         self.notes = notes
     }
-    
     var isPositiveChange: Bool {
         return weightChange > 0
     }
-    
     var formattedChange: String {
         let sign = weightChange > 0 ? "+" : ""
         return "\(sign)\(String(format: "%.1f", weightChange)) \(unit)"
     }
 }
-
-// MARK: - App Settings Model
 struct AppSettings: Codable, Equatable {
     var weightUnit: WeightUnit = .kilograms
     var volumeUnit: VolumeUnit = .liters
     var areaUnit: AreaUnit = .squareMeters
-    var selectedPrimaryUnit: PrimaryUnit = .kilograms // Основная выбранная единица измерения
+    var selectedPrimaryUnit: PrimaryUnit = .kilograms
     var enableNotifications: Bool = false
     var enableTaskReminders: Bool = true
     var enableWateringReminders: Bool = true
     var enableVaccinationReminders: Bool = true
     var reminderTime: Date = Calendar.current.date(from: DateComponents(hour: 9, minute: 0)) ?? Date()
-    
     enum PrimaryUnit: String, CaseIterable, Codable, Equatable {
         case kilograms = "KILOGRAMS (KG)"
         case liters = "LITERS (L)"
         case pieces = "PIECES (PCS)"
-        
         var shortName: String {
             switch self {
             case .kilograms: return "kg"
@@ -503,19 +439,16 @@ struct AppSettings: Codable, Equatable {
             }
         }
     }
-    
     enum WeightUnit: String, CaseIterable, Codable, Equatable {
         case kilograms = "kg"
         case pounds = "lbs"
         case grams = "g"
     }
-    
     enum VolumeUnit: String, CaseIterable, Codable, Equatable {
         case liters = "L"
         case gallons = "gal"
         case milliliters = "mL"
     }
-    
     enum AreaUnit: String, CaseIterable, Codable, Equatable {
         case squareMeters = "m²"
         case squareFeet = "ft²"
@@ -523,8 +456,6 @@ struct AppSettings: Codable, Equatable {
         case hectares = "ha"
     }
 }
-
-// MARK: - Farmboard Item Model
 struct FarmboardItem: Identifiable, Codable, Equatable {
     let id: UUID
     var name: String
@@ -534,8 +465,7 @@ struct FarmboardItem: Identifiable, Codable, Equatable {
     var createdDate: Date
     var status: FarmboardItemStatus
     var notes: String
-    var scheduledDate: Date? // Для событий с уведомлениями
-    
+    var scheduledDate: Date?
     init(name: String, itemType: FarmboardItemType, quantity: Int, unit: String, status: FarmboardItemStatus = .active, notes: String = "", scheduledDate: Date? = nil) {
         self.id = UUID()
         self.name = name
@@ -547,13 +477,11 @@ struct FarmboardItem: Identifiable, Codable, Equatable {
         self.notes = notes
         self.scheduledDate = scheduledDate
     }
-    
     enum FarmboardItemType: String, CaseIterable, Codable {
         case crop = "Crop"
         case animal = "Animal"
         case task = "Task"
         case event = "Event"
-        
         var imageName: String {
             switch self {
             case .crop: return "my_crop"
@@ -562,7 +490,6 @@ struct FarmboardItem: Identifiable, Codable, Equatable {
             case .event: return "my_event"
             }
         }
-        
         var buttonImageName: String {
             switch self {
             case .crop: return "btn_crop"
@@ -571,7 +498,6 @@ struct FarmboardItem: Identifiable, Codable, Equatable {
             case .event: return "btn_event"
             }
         }
-        
         var color: Color {
             switch self {
             case .crop: return .green
@@ -581,13 +507,11 @@ struct FarmboardItem: Identifiable, Codable, Equatable {
             }
         }
     }
-    
     enum FarmboardItemStatus: String, CaseIterable, Codable {
         case active = "Active"
         case completed = "Completed"
         case pending = "Pending"
         case archived = "Archived"
-        
         var color: Color {
             switch self {
             case .active: return .green

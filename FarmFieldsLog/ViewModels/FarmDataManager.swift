@@ -1,9 +1,7 @@
 import Foundation
 import SwiftUI
-
 class FarmDataManager: ObservableObject {
     static let shared = FarmDataManager()
-    
     @Published var tasks: [FarmTask] = []
     @Published var crops: [Crop] = []
     @Published var animals: [Animal] = []
@@ -13,24 +11,16 @@ class FarmDataManager: ObservableObject {
     @Published var events: [FarmEvent] = []
     @Published var farmboardItems: [FarmboardItem] = []
     @Published var settings: AppSettings = AppSettings()
-    
     private let userDefaults = UserDefaults.standard
-    
     private init() {
         loadData()
-        // Удаляем автоматическое создание моковых данных
-        // createSampleData() - теперь будет вызываться только когда нужно
     }
-    
-    // Новый инициализатор для тестов и preview
     init(withSampleData: Bool = false) {
         loadData()
         if withSampleData {
             createSampleData()
         }
     }
-    
-    // MARK: - Data Persistence
     func saveData() {
         saveToUserDefaults(tasks, key: "farm_tasks")
         saveToUserDefaults(crops, key: "farm_crops")
@@ -42,7 +32,6 @@ class FarmDataManager: ObservableObject {
         saveToUserDefaults(farmboardItems, key: "farmboard_items")
         saveToUserDefaults(settings, key: "app_settings")
     }
-    
     private func loadData() {
         tasks = loadFromUserDefaults([FarmTask].self, key: "farm_tasks") ?? []
         crops = loadFromUserDefaults([Crop].self, key: "farm_crops") ?? []
@@ -54,164 +43,126 @@ class FarmDataManager: ObservableObject {
         farmboardItems = loadFromUserDefaults([FarmboardItem].self, key: "farmboard_items") ?? []
         settings = loadFromUserDefaults(AppSettings.self, key: "app_settings") ?? AppSettings()
     }
-    
     private func saveToUserDefaults<T: Codable>(_ object: T, key: String) {
         if let encoded = try? JSONEncoder().encode(object) {
             userDefaults.set(encoded, forKey: key)
         }
     }
-    
     private func loadFromUserDefaults<T: Codable>(_ type: T.Type, key: String) -> T? {
         guard let data = userDefaults.data(forKey: key) else { return nil }
         return try? JSONDecoder().decode(type, from: data)
     }
-    
-    // MARK: - Tasks Management
     func addTask(_ task: FarmTask) {
         tasks.append(task)
         saveData()
     }
-    
     func updateTask(_ task: FarmTask) {
         if let index = tasks.firstIndex(where: { $0.id == task.id }) {
             tasks[index] = task
             saveData()
         }
     }
-    
     func deleteTask(at indexSet: IndexSet) {
         tasks.remove(atOffsets: indexSet)
         saveData()
     }
-    
     func toggleTaskCompletion(_ task: FarmTask) {
         if let index = tasks.firstIndex(where: { $0.id == task.id }) {
             tasks[index].isCompleted.toggle()
             saveData()
         }
     }
-    
-    // MARK: - Crops Management
     func addCrop(_ crop: Crop) {
         crops.append(crop)
         saveData()
     }
-    
     func updateCrop(_ crop: Crop) {
         if let index = crops.firstIndex(where: { $0.id == crop.id }) {
             crops[index] = crop
             saveData()
         }
     }
-    
     func deleteCrop(at indexSet: IndexSet) {
         crops.remove(atOffsets: indexSet)
         saveData()
     }
-    
-    // MARK: - Animals Management
     func addAnimal(_ animal: Animal) {
         animals.append(animal)
         saveData()
     }
-    
     func updateAnimal(_ animal: Animal) {
         if let index = animals.firstIndex(where: { $0.id == animal.id }) {
             animals[index] = animal
             saveData()
         }
     }
-    
     func deleteAnimal(at indexSet: IndexSet) {
         animals.remove(atOffsets: indexSet)
         saveData()
     }
-    
     func deleteAnimal(_ animal: Animal) {
         animals.removeAll { $0.id == animal.id }
-        
-        // Also delete all related records
         productionRecords.removeAll { $0.animalId == animal.id }
         weightChangeRecords.removeAll { $0.animalId == animal.id }
         events.removeAll { $0.relatedAnimalId == animal.id }
-        
         saveData()
-        print("🗑️ Deleted animal: \(animal.species.rawValue) and all related records")
     }
-    
-    // MARK: - Production Records Management
     func addProductionRecord(_ record: ProductionRecord) {
         productionRecords.append(record)
         saveData()
     }
-    
     func updateProductionRecord(_ record: ProductionRecord) {
         if let index = productionRecords.firstIndex(where: { $0.id == record.id }) {
             productionRecords[index] = record
             saveData()
         }
     }
-    
     func deleteProductionRecord(at indexSet: IndexSet) {
         productionRecords.remove(atOffsets: indexSet)
         saveData()
     }
-    
-    // MARK: - Weight Change Records Management
     func addWeightChangeRecord(_ record: WeightChangeRecord) {
         weightChangeRecords.append(record)
         saveData()
     }
-    
     func updateWeightChangeRecord(_ record: WeightChangeRecord) {
         if let index = weightChangeRecords.firstIndex(where: { $0.id == record.id }) {
             weightChangeRecords[index] = record
             saveData()
         }
     }
-    
     func deleteWeightChangeRecord(at indexSet: IndexSet) {
         weightChangeRecords.remove(atOffsets: indexSet)
         saveData()
     }
-    
-    // MARK: - Storage Management
     func addStorageItem(_ item: StorageItem) {
         storageItems.append(item)
         saveData()
     }
-    
     func updateStorageItem(_ item: StorageItem) {
         if let index = storageItems.firstIndex(where: { $0.id == item.id }) {
             storageItems[index] = item
             saveData()
         }
     }
-    
     func deleteStorageItem(at indexSet: IndexSet) {
         storageItems.remove(atOffsets: indexSet)
         saveData()
     }
-    
-    // MARK: - Events Management
     func addEvent(_ event: FarmEvent) {
         events.append(event)
         saveData()
     }
-    
     func updateEvent(_ event: FarmEvent) {
         if let index = events.firstIndex(where: { $0.id == event.id }) {
             events[index] = event
             saveData()
         }
     }
-    
     func deleteEvent(at indexSet: IndexSet) {
         events.remove(atOffsets: indexSet)
         saveData()
     }
-    
-    // MARK: - Analytics & Statistics
     func getWeeklyHarvest() -> Double {
         let weekAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
         let weeklyRecords = productionRecords.filter { $0.date >= weekAgo }
@@ -222,7 +173,6 @@ class FarmDataManager: ObservableObject {
             return total
         }
     }
-    
     func getWeeklyEggs() -> Int {
         let weekAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
         let eggRecords = productionRecords.filter { 
@@ -230,7 +180,6 @@ class FarmDataManager: ObservableObject {
         }
         return Int(eggRecords.reduce(0) { $0 + $1.amount })
     }
-    
     func getWeeklyMilk() -> Double {
         let weekAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
         let milkRecords = productionRecords.filter { 
@@ -238,11 +187,9 @@ class FarmDataManager: ObservableObject {
         }
         return milkRecords.reduce(0) { $0 + $1.amount }
     }
-    
     func getPendingTasks() -> [FarmTask] {
         return tasks.filter { !$0.isCompleted }
     }
-    
     func getUpcomingEvents() -> [FarmEvent] {
         let today = Date()
         let nextWeek = Calendar.current.date(byAdding: .day, value: 7, to: today) ?? today
@@ -250,12 +197,9 @@ class FarmDataManager: ObservableObject {
             $0.date >= today && $0.date <= nextWeek && !$0.isCompleted 
         }.sorted { $0.date < $1.date }
     }
-    
     func getLowStockItems() -> [StorageItem] {
         return storageItems.filter { $0.isLowStock }
     }
-    
-    // MARK: - Sample Data Creation
     private func createSampleData() {
         if tasks.isEmpty {
             let sampleTasks = [
@@ -289,7 +233,6 @@ class FarmDataManager: ObservableObject {
             ]
             tasks = sampleTasks
         }
-        
         if animals.isEmpty {
             let sampleAnimals = [
                 Animal(
@@ -319,7 +262,6 @@ class FarmDataManager: ObservableObject {
             ]
             animals = sampleAnimals
         }
-        
         if productionRecords.isEmpty {
             let sampleRecords = [
                 ProductionRecord(
@@ -341,16 +283,12 @@ class FarmDataManager: ObservableObject {
             ]
             productionRecords = sampleRecords
         }
-        
         saveData()
     }
-    
-    // MARK: - Settings Management
     func updateSettings(_ newSettings: AppSettings) {
         settings = newSettings
         saveData()
     }
-    
     func clearAllData() {
         tasks.removeAll()
         crops.removeAll()
@@ -360,32 +298,25 @@ class FarmDataManager: ObservableObject {
         events.removeAll()
         farmboardItems.removeAll()
         saveData()
-        print("🗑️ Все данные очищены")
     }
-    
-    // MARK: - Farmboard Items Management
     func addFarmboardItem(_ item: FarmboardItem) {
         farmboardItems.append(item)
         saveData()
     }
-    
     func updateFarmboardItem(_ item: FarmboardItem) {
         if let index = farmboardItems.firstIndex(where: { $0.id == item.id }) {
             farmboardItems[index] = item
             saveData()
         }
     }
-    
     func deleteFarmboardItem(at indexSet: IndexSet) {
         farmboardItems.remove(atOffsets: indexSet)
         saveData()
     }
-    
     func deleteFarmboardItem(_ item: FarmboardItem) {
         farmboardItems.removeAll { $0.id == item.id }
         saveData()
     }
-    
     func toggleFarmboardItemStatus(_ item: FarmboardItem) {
         if let index = farmboardItems.firstIndex(where: { $0.id == item.id }) {
             let currentStatus = farmboardItems[index].status
@@ -393,16 +324,12 @@ class FarmDataManager: ObservableObject {
             saveData()
         }
     }
-    
     func getFarmboardItemsByType(_ type: FarmboardItem.FarmboardItemType) -> [FarmboardItem] {
         return farmboardItems.filter { $0.itemType == type }
     }
-    
-    // Метод для добавления тестовых данных вручную (для отладки)
     func addSampleDataIfNeeded() {
         if animals.isEmpty && tasks.isEmpty && storageItems.isEmpty {
             createSampleData()
-            print("📝 Добавлены тестовые данные")
         }
     }
 }

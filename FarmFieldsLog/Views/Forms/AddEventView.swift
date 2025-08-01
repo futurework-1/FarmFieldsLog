@@ -1,16 +1,13 @@
 import SwiftUI
-
 struct AddEventView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var dataManager: FarmDataManager
-    
     @State private var title = ""
     @State private var description = ""
     @State private var date = Date()
     @State private var eventType = FarmEvent.EventType.other
     @State private var reminderDate: Date?
     @State private var hasReminder = false
-    
     var body: some View {
         NavigationView {
             Form {
@@ -19,7 +16,6 @@ struct AddEventView: View {
                     TextField("Description", text: $description, axis: .vertical)
                         .lineLimit(3...6)
                 }
-                
                 Section(header: Text("Event Type")) {
                     Picker("Type", selection: $eventType) {
                         ForEach(FarmEvent.EventType.allCases, id: \.self) { type in
@@ -32,12 +28,9 @@ struct AddEventView: View {
                         }
                     }
                 }
-                
                 Section(header: Text("Schedule")) {
                     DatePicker("Event Date", selection: $date, displayedComponents: [.date, .hourAndMinute])
-                    
                     Toggle("Set Reminder", isOn: $hasReminder)
-                    
                     if hasReminder {
                         DatePicker(
                             "Reminder Date",
@@ -58,7 +51,6 @@ struct AddEventView: View {
                         dismiss()
                     }
                 }
-                
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") {
                         saveEvent()
@@ -75,7 +67,6 @@ struct AddEventView: View {
             }
         }
     }
-    
     private func saveEvent() {
         let newEvent = FarmEvent(
             title: title,
@@ -87,12 +78,10 @@ struct AddEventView: View {
             relatedAnimalId: nil,
             relatedCropId: nil
         )
-        
         dataManager.addEvent(newEvent)
         dismiss()
     }
 }
-
 #Preview {
     AddEventView()
         .environmentObject(FarmDataManager.shared)

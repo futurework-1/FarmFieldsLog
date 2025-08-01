@@ -1,9 +1,7 @@
 import SwiftUI
-
 struct AddAnimalView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var dataManager: FarmDataManager
-    
     @State private var species = Animal.AnimalSpecies.chicken
     @State private var breed = ""
     @State private var name = ""
@@ -14,7 +12,6 @@ struct AddAnimalView: View {
     @State private var nextVaccination: Date?
     @State private var notes = ""
     @State private var isHighProducer = false
-    
     var body: some View {
         NavigationView {
             Form {
@@ -28,14 +25,11 @@ struct AddAnimalView: View {
                             .tag(species)
                         }
                     }
-                    
                     TextField("Breed", text: $breed)
                     TextField("Name (Optional)", text: $name)
-                    
                     Stepper("Count: \(count)", value: $count, in: 1...999)
                     TextField("Age", text: $age)
                 }
-                
                 Section(header: Text("Health Status")) {
                     Picker("Health", selection: $healthStatus) {
                         ForEach(Animal.HealthStatus.allCases, id: \.self) { status in
@@ -48,10 +42,8 @@ struct AddAnimalView: View {
                             .tag(status)
                         }
                     }
-                    
                     Toggle("High Producer", isOn: $isHighProducer)
                 }
-                
                 Section(header: Text("Vaccination Records")) {
                     DatePicker(
                         "Last Vaccination",
@@ -62,12 +54,10 @@ struct AddAnimalView: View {
                         displayedComponents: .date
                     )
                     .disabled(lastVaccination == nil)
-                    
                     Toggle("Has been vaccinated", isOn: Binding(
                         get: { lastVaccination != nil },
                         set: { if !$0 { lastVaccination = nil; nextVaccination = nil } else { lastVaccination = Date() } }
                     ))
-                    
                     if lastVaccination != nil {
                         DatePicker(
                             "Next Vaccination",
@@ -78,14 +68,12 @@ struct AddAnimalView: View {
                             displayedComponents: .date
                         )
                         .disabled(nextVaccination == nil)
-                        
                         Toggle("Schedule next vaccination", isOn: Binding(
                             get: { nextVaccination != nil },
                             set: { if !$0 { nextVaccination = nil } else { nextVaccination = Calendar.current.date(byAdding: .month, value: 6, to: Date()) } }
                         ))
                     }
                 }
-                
                 Section(header: Text("Notes")) {
                     TextField("Additional notes", text: $notes, axis: .vertical)
                         .lineLimit(3...6)
@@ -99,7 +87,6 @@ struct AddAnimalView: View {
                         dismiss()
                     }
                 }
-                
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") {
                         saveAnimal()
@@ -109,7 +96,6 @@ struct AddAnimalView: View {
             }
         }
     }
-    
     private func saveAnimal() {
         let newAnimal = Animal(
             species: species,
@@ -123,12 +109,10 @@ struct AddAnimalView: View {
             notes: notes,
             isHighProducer: isHighProducer
         )
-        
         dataManager.addAnimal(newAnimal)
         dismiss()
     }
 }
-
 #Preview {
     AddAnimalView()
         .environmentObject(FarmDataManager.shared)

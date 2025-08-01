@@ -1,9 +1,7 @@
 import SwiftUI
-
 struct AddCropView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var dataManager: FarmDataManager
-    
     @State private var name = ""
     @State private var variety = ""
     @State private var plantingArea = ""
@@ -13,7 +11,6 @@ struct AddCropView: View {
     @State private var status = Crop.CropStatus.healthy
     @State private var notes = ""
     @State private var unitOfMeasure = ""
-    
     var body: some View {
         NavigationView {
             Form {
@@ -22,19 +19,16 @@ struct AddCropView: View {
                     TextField("Variety", text: $variety)
                     TextField("Planting Area", text: $plantingArea)
                 }
-                
                 Section(header: Text("Dates")) {
                     DatePicker("Planting Date", selection: $plantingDate, displayedComponents: .date)
                     DatePicker("Expected Harvest", selection: $expectedHarvestDate, displayedComponents: .date)
                 }
-                
                 Section(header: Text("Current Status")) {
                     Picker("Growth Stage", selection: $currentStage) {
                         ForEach(Crop.CropStage.allCases, id: \.self) { stage in
                             Text(stage.rawValue).tag(stage)
                         }
                     }
-                    
                     Picker("Health Status", selection: $status) {
                         ForEach(Crop.CropStatus.allCases, id: \.self) { status in
                             HStack {
@@ -47,7 +41,6 @@ struct AddCropView: View {
                         }
                     }
                 }
-                
                 Section(header: Text("Additional Details")) {
                     TextField("Unit of Measure", text: $unitOfMeasure)
                     TextField("Notes", text: $notes, axis: .vertical)
@@ -62,7 +55,6 @@ struct AddCropView: View {
                         dismiss()
                     }
                 }
-                
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") {
                         saveCrop()
@@ -72,11 +64,9 @@ struct AddCropView: View {
             }
         }
         .onAppear {
-            // Устанавливаем единицу измерения из настроек
             unitOfMeasure = dataManager.settings.selectedPrimaryUnit.shortName
         }
     }
-    
     private func saveCrop() {
         let newCrop = Crop(
             name: name,
@@ -90,12 +80,10 @@ struct AddCropView: View {
             harvestAmount: 0,
             unitOfMeasure: unitOfMeasure
         )
-        
         dataManager.addCrop(newCrop)
         dismiss()
     }
 }
-
 #Preview {
     AddCropView()
         .environmentObject(FarmDataManager.shared)

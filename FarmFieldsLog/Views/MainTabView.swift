@@ -1,12 +1,9 @@
 import SwiftUI
-
 struct MainTabView: View {
     @StateObject private var dataManager = FarmDataManager.shared
     @State private var selectedTab = 0
-    
     var body: some View {
         ZStack {
-            // Контент текущей вкладки
             Group {
                 switch selectedTab {
                 case 0:
@@ -24,8 +21,6 @@ struct MainTabView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            
-            // Кастомный tab bar
             VStack {
                 Spacer()
                 CustomTabBar(selectedTab: $selectedTab)
@@ -37,25 +32,18 @@ struct MainTabView: View {
         }
         .environmentObject(dataManager)
     }
-    
     private func hideTabBar() {
         UITabBar.appearance().isHidden = true
     }
 }
-
-// Кастомный tab bar
 struct CustomTabBar: View {
     @Binding var selectedTab: Int
-    
     var body: some View {
         ZStack {
-            // Фоновое изображение
             Image("tab_bar_bg")
                 .resizable()
                 .scaledToFit()
                 .frame(height: 78)
-            
-            // Иконки
             HStack(spacing: 16) {
                 ForEach(0..<5) { index in
                     Button(action: {
@@ -75,13 +63,10 @@ struct CustomTabBar: View {
         }
     }
 }
-
-// Кастомная иконка для таб бара
 struct TabIcon: View {
     let normalImage: String
     let selectedImage: String
     let isSelected: Bool
-    
     var body: some View {
         Image(isSelected ? selectedImage : normalImage)
             .resizable()
@@ -89,7 +74,6 @@ struct TabIcon: View {
             .frame(width: 36, height: 36)
     }
 }
-
 #Preview {
     MainTabView()
 }
