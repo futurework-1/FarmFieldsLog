@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "plant_cicly_text.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

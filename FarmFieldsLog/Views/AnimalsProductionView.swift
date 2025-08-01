@@ -53,7 +53,7 @@ struct AnimalsProductionView: View {
                         Button(action: {
                             showingSpeciesSelection = true
                         }) {
-                            Image("btn_add_inventory")
+                            Image("add_animal")
                                 .resizable()
                                 .scaledToFit()
                                 .frame(width: 340)

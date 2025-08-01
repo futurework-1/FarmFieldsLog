@@ -65,7 +65,7 @@ struct FarmTask: Identifiable, Codable {
 }
 
 // MARK: - Crop Model
-struct Crop: Identifiable, Codable {
+struct Crop: Identifiable, Codable, Equatable {
     let id: UUID
     var name: String
     var variety: String
@@ -77,8 +77,9 @@ struct Crop: Identifiable, Codable {
     var notes: String
     var harvestAmount: Double
     var unitOfMeasure: String
+    var cropType: CropType
     
-    init(name: String, variety: String, plantingArea: String, plantingDate: Date, expectedHarvestDate: Date, currentStage: CropStage, status: CropStatus, notes: String, harvestAmount: Double, unitOfMeasure: String) {
+    init(name: String, variety: String, plantingArea: String, plantingDate: Date, expectedHarvestDate: Date, currentStage: CropStage, status: CropStatus, notes: String, harvestAmount: Double, unitOfMeasure: String, cropType: CropType = .vegetables) {
         self.id = UUID()
         self.name = name
         self.variety = variety
@@ -90,6 +91,90 @@ struct Crop: Identifiable, Codable {
         self.notes = notes
         self.harvestAmount = harvestAmount
         self.unitOfMeasure = unitOfMeasure
+        self.cropType = cropType
+    }
+    
+    enum CropType: String, CaseIterable, Codable {
+        case vegetables = "Vegetables"
+        case fruits = "Fruits"
+        case grains = "Grains"
+        case herbs = "Herbs"
+        case flowers = "Flowers"
+        
+        var icon: String {
+            switch self {
+            case .vegetables: return "🥕"
+            case .fruits: return "🍎"
+            case .grains: return "🌾"
+            case .herbs: return "🌿"
+            case .flowers: return "🌸"
+            }
+        }
+        
+        var commonCrops: [String] {
+            switch self {
+            case .vegetables:
+                return ["CARROTS", "POTATOES", "TOMATOES", "CUCUMBERS", "PEPPERS", "SPINACH", "CABBAGE", "BROCCOLI"]
+            case .fruits:
+                return ["STRAWBERRIES", "APPLES", "GRAPES", "BANANAS", "ORANGES", "WATERMELON"]
+            case .grains:
+                return ["WHEAT", "CORN", "RICE", "BARLEY", "OATS", "RYE"]
+            case .herbs:
+                return ["BASIL", "PARSLEY", "THYME", "OREGANO", "ROSEMARY", "MINT"]
+            case .flowers:
+                return ["ROSES", "TULIPS", "SUNFLOWERS", "DAISIES", "LAVENDER", "MARIGOLD"]
+            }
+        }
+        
+        // Функция возвращает правильный эмодзи для конкретного растения
+        static func getEmojiForCrop(_ cropName: String) -> String {
+            switch cropName.uppercased() {
+            // Овощи
+            case "CARROTS": return "🥕"
+            case "POTATOES": return "🥔"
+            case "TOMATOES": return "🍅"
+            case "CUCUMBERS": return "🥒"
+            case "PEPPERS": return "🌶️"
+            case "SPINACH": return "🥬"
+            case "CABBAGE": return "🥬"
+            case "BROCCOLI": return "🥦"
+            case "CORN": return "🌽"
+            
+            // Фрукты
+            case "STRAWBERRIES": return "🍓"
+            case "APPLES": return "🍎"
+            case "GRAPES": return "🍇"
+            case "BANANAS": return "🍌"
+            case "ORANGES": return "🍊"
+            case "WATERMELON": return "🍉"
+            
+            // Зерновые
+            case "WHEAT": return "🌾"
+            case "RICE": return "🌾"
+            case "BARLEY": return "🌾"
+            case "OATS": return "🌾"
+            case "RYE": return "🌾"
+            
+            // Травы
+            case "BASIL": return "🌿"
+            case "PARSLEY": return "🌿"
+            case "THYME": return "🌿"
+            case "OREGANO": return "🌿"
+            case "ROSEMARY": return "🌿"
+            case "MINT": return "🌿"
+            
+            // Цветы
+            case "ROSES": return "🌹"
+            case "TULIPS": return "🌷"
+            case "SUNFLOWERS": return "🌻"
+            case "DAISIES": return "🌼"
+            case "LAVENDER": return "💜"
+            case "MARIGOLD": return "🌻"
+            
+            // По умолчанию
+            default: return "🌱"
+            }
+        }
     }
     
     enum CropStage: String, CaseIterable, Codable {
