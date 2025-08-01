@@ -1014,8 +1014,6 @@ struct EventTypeSelectionView: View {
     private func requestNotificationPermission(completion: @escaping (Bool) -> Void) {
         let center = UNUserNotificationCenter.current()
         center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
-            if let error = error {
-            }
             completion(granted)
         }
     }
@@ -1032,9 +1030,6 @@ struct EventTypeSelectionView: View {
         let trigger = UNCalendarNotificationTrigger(dateMatching: triggerDate, repeats: false)
         let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
         center.add(request) { error in
-            if let error = error {
-            } else {
-            }
         }
     }
 }

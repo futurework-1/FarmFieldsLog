@@ -941,8 +941,6 @@ struct ProductionStatisticsSection: View {
         let filtered = dataManager.productionRecords.filter { record in
             record.animalId == animal.id && record.productType == productType
         }.sorted { $0.date > $1.date }
-        for (index, record) in filtered.enumerated() {
-        }
         return filtered
     }
     var body: some View {

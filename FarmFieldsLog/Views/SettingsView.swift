@@ -158,8 +158,6 @@ struct NotificationToggleButton: View {
     private func requestNotificationPermission(completion: @escaping (Bool) -> Void) {
         let center = UNUserNotificationCenter.current()
         center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
-            if let error = error {
-            }
             completion(granted)
         }
     }
