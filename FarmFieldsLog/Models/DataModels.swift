@@ -534,8 +534,9 @@ struct FarmboardItem: Identifiable, Codable, Equatable {
     var createdDate: Date
     var status: FarmboardItemStatus
     var notes: String
+    var scheduledDate: Date? // Для событий с уведомлениями
     
-    init(name: String, itemType: FarmboardItemType, quantity: Int, unit: String, status: FarmboardItemStatus = .active, notes: String = "") {
+    init(name: String, itemType: FarmboardItemType, quantity: Int, unit: String, status: FarmboardItemStatus = .active, notes: String = "", scheduledDate: Date? = nil) {
         self.id = UUID()
         self.name = name
         self.itemType = itemType
@@ -544,6 +545,7 @@ struct FarmboardItem: Identifiable, Codable, Equatable {
         self.createdDate = Date()
         self.status = status
         self.notes = notes
+        self.scheduledDate = scheduledDate
     }
     
     enum FarmboardItemType: String, CaseIterable, Codable {
