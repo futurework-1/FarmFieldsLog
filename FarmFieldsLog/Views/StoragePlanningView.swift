@@ -43,7 +43,7 @@ struct StoragePlanningView: View {
                             Image("btn_add_inventory")
                                 .resizable()
                                 .scaledToFit()
-                                .frame(width: 340)
+                                .padding(.horizontal, 16)
                         }
                         Spacer()
                             .frame(height: 150)
@@ -347,7 +347,6 @@ struct GameTextField: View {
             Image("field_empty")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 340)
                     HStack {
                 TextField("", text: $text, onEditingChanged: { editing in
                     isFocused?.wrappedValue = editing
@@ -451,7 +450,6 @@ struct StorageItemCard: View {
             Image("field")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 340)
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(item.name.uppercased())
@@ -506,10 +504,10 @@ struct EventSection: View {
             .padding(.horizontal, 32)
             if dataManager.events.isEmpty {
                 ZStack {
-                    Image("field")
+                    Image("field_empty")
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 340)
+                        .padding(.horizontal, 16)
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("TAP PLUS")
@@ -523,7 +521,7 @@ struct EventSection: View {
                         }
                         Spacer()
                     }
-                    .padding(.horizontal, 46)
+                    .padding(.horizontal, 26)
                     .padding(.vertical, 15)
                 }
             } else {
@@ -553,7 +551,7 @@ struct StorageEventCard: View {
             Image("field")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 340)
+                .padding(.horizontal, 16)
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(event.title.uppercased())
@@ -567,7 +565,7 @@ struct StorageEventCard: View {
                 }
                 Spacer()
             }
-            .padding(.horizontal, 46)
+            .padding(.horizontal, 26)
             .padding(.vertical, 15)
         }
     }
@@ -655,10 +653,9 @@ struct TasksSection: View {
             .padding(.horizontal, 10)
             if filteredTasks.isEmpty {
                 ZStack {
-                    Image("field")
+                    Image("field_empty")
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 320)
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("TAP PLUS")
@@ -686,7 +683,7 @@ struct TasksSection: View {
                             }
                         }
                     }
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, 16)
                     .padding(.vertical, 15)
                 }
             } else {
@@ -738,7 +735,6 @@ struct TaskCard: View {
             Image("field")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 320)
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(task.title.uppercased())
@@ -1018,7 +1014,6 @@ struct EventDateField: View {
             Image("field_empty")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 340)
             HStack {
                 DatePicker("", selection: $selectedDate, displayedComponents: .date)
                     .datePickerStyle(CompactDatePickerStyle())
@@ -1240,7 +1235,6 @@ struct MonthDropdownField: View {
                     Image("field_empty")
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 340)
                     HStack {
                         Text(selectedMonth.isEmpty ? "MONTH" : selectedMonth)
                             .font(.custom("Chango-Regular", size: 16))

@@ -402,7 +402,8 @@ struct TaskItemView: View {
             ZStack {
                 Image("field_empty")
                     .resizable()
-                    .frame(width: 340, height: 60)
+                    .scaledToFit()
+                    .padding(.horizontal, 16)
                 HStack {
                     Button(action: {
                         isCompleted.toggle()
@@ -507,7 +508,8 @@ struct EventItemView: View {
             ZStack {
                 Image("field_empty")
                     .resizable()
-                    .frame(width: 340, height: 60)
+                    .scaledToFit()
+                    .padding(.horizontal, 16)
                 HStack {
                     Image("my_event")
                         .resizable()
@@ -1296,7 +1298,6 @@ struct FarmboardItemDetailOverlay: View {
                                     Image("field_empty")
                                         .resizable()
                                         .scaledToFit()
-                                        .frame(width: 340)
                                     HStack {
                                         Text(item.notes)
                                             .font(.custom("Chango-Regular", size: 12))
@@ -1317,7 +1318,6 @@ struct FarmboardItemDetailOverlay: View {
                                 Image("field_empty")
                                     .resizable()
                                     .scaledToFit()
-                                    .frame(width: 340)
                                 HStack {
                                     Text(formatDate(item.createdDate))
                                         .font(.custom("Chango-Regular", size: 12))

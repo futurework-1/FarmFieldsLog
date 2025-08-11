@@ -41,7 +41,7 @@ struct AnimalsProductionView: View {
                             Image("add_animal")
                                 .resizable()
                                 .scaledToFit()
-                                .frame(width: 340)
+                                .padding(.horizontal, 16)
                         }
                         Spacer()
                             .frame(height: 150)
@@ -151,7 +151,8 @@ struct AnimalCard: View {
             ZStack {
                 Image("field_empty")
                     .resizable()
-                    .frame(width: 340, height: 70)
+                    .scaledToFit()
+                    .padding(.horizontal, 16)
                 HStack {
                 VStack(alignment: .leading, spacing: 4) {
                         Text(animal.species.rawValue.uppercased())
@@ -183,7 +184,7 @@ struct AnimalCard: View {
                         }
                     }
                 }
-                .padding(.horizontal, 26)
+                .padding(.horizontal, 30)
                 .padding(.vertical, 15)
             }
         }
@@ -232,7 +233,7 @@ struct AnimalSpeciesSelectionOverlay: View {
                             ZStack {
                                 Image("field_empty")
                                     .resizable()
-                                    .frame(width: 340, height: 60)
+                                    .scaledToFit()
                                 HStack {
                                     Text(species.icon)
                                         .font(.system(size: 24))
@@ -476,7 +477,7 @@ struct AnimalDropdown: View {
                 ZStack {
                     Image("field_empty")
                         .resizable()
-                        .frame(width: 340, height: 50)
+                        .scaledToFit()
                         .shadow(color: .black.opacity(0.2), radius: 3, x: 0, y: 2)
                     HStack {
                         Text(selectedOption.isEmpty ? placeholder : selectedOption)
@@ -521,7 +522,6 @@ struct AnimalDropdown: View {
                         .buttonStyle(PlainButtonStyle())
                     }
                 }
-                .frame(width: 340)
                 .background(
                     RoundedRectangle(cornerRadius: 12)
                         .foregroundColor(Color.black.opacity(0.9))
@@ -546,8 +546,7 @@ struct AnimalTextField: View {
         ZStack {
             Image("field_empty")
                 .resizable()
-                .frame(width: 340, height: 50)
-                .shadow(color: .black.opacity(0.2), radius: 3, x: 0, y: 2)
+                .scaledToFit()
                     HStack {
                 TextField("", text: $text)
                     .placeholder(when: text.isEmpty) {
@@ -965,7 +964,6 @@ struct ProductionStatisticsSection: View {
                     Image("field_empty")
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 340)
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("TAP PLUS")
@@ -1016,7 +1014,6 @@ struct ProductionRecordCard: View {
             Image("field_empty")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 340)
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(formattedAmount)
@@ -1064,7 +1061,6 @@ struct WeightChangesSection: View {
                     Image("field_empty")
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 340)
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("TAP PLUS")
@@ -1100,7 +1096,6 @@ struct WeightChangeCard: View {
             Image("field_empty")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 340)
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(record.formattedChange)
@@ -1148,7 +1143,6 @@ struct EventsSection: View {
                     Image("field_empty")
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 340)
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("TAP PLUS")
@@ -1207,7 +1201,6 @@ struct AnimalEventCard: View {
             Image("field_empty")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 340)
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(event.eventType.rawValue.uppercased())
@@ -1260,7 +1253,6 @@ struct FeedingPlanCard: View {
             Image("field_empty")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 340)
             HStack {
                 VStack(alignment: .leading, spacing: 5) {
                     Text(type)
@@ -1290,7 +1282,6 @@ struct DatePickerField: View {
             Image("field_empty")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 340)
             HStack {
                 DatePicker("", selection: $selectedDate, displayedComponents: .date)
                     .datePickerStyle(CompactDatePickerStyle())

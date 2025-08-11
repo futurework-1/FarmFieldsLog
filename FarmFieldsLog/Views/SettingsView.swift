@@ -1,11 +1,12 @@
 import SwiftUI
 import UserNotifications
+import WebKit
 struct SettingsView: View {
     @EnvironmentObject var dataManager: FarmDataManager
     @State private var showingClearDataAlert = false
     @State private var showingUnitSettings = false
-    @State private var showingAbout = false
-    @State private var showingSupport = false
+    @State private var showingAboutWeb = false
+    @State private var showingSupportWeb = false
     var body: some View {
         ZStack {
             Image("background")
@@ -36,14 +37,14 @@ struct SettingsView: View {
                         title: "ABOUT THE APP",
                         showArrow: true,
                         action: {
-                            showingAbout = true
+                            showingAboutWeb = true
                         }
                     )
                     GameButton(
                         title: "SUPPORT",
                         showArrow: true,
                         action: {
-                            showingSupport = true
+                            showingSupportWeb = true
                         }
                     )
                 }
@@ -73,6 +74,12 @@ struct SettingsView: View {
                 }
             }
         )
+        .fullScreenCover(isPresented: $showingSupportWeb) {
+            SupportWebView(isPresented: $showingSupportWeb)
+        }
+        .fullScreenCover(isPresented: $showingAboutWeb) {
+            AboutWebView(isPresented: $showingAboutWeb)
+        }
         .onChange(of: dataManager.settings) { _ in
             dataManager.saveData()
         }
@@ -88,7 +95,6 @@ struct GameButton: View {
                 Image("field")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 340)
             HStack {
                 Text(title)
                     .font(.custom("Chango-Regular", size: 16))
@@ -116,7 +122,6 @@ struct NotificationToggleButton: View {
             Image("field")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 340)
         HStack {
             Text("NOTIFICATION")
                 .font(.custom("Chango-Regular", size: 18))
@@ -169,7 +174,6 @@ struct JournalClearButton: View {
             Image("field")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 340)
         HStack {
             Text("JOURNAL")
                 .font(.custom("Chango-Regular", size: 18))
@@ -308,7 +312,6 @@ struct UnitOverlayButton: View {
                 Image(isSelected ? "field_selected" : "field")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 330)
                 HStack {
                     Text(title)
                         .font(.custom("Chango-Regular", size: 16))
@@ -364,41 +367,108 @@ struct AboutView: View {
         .navigationBarHidden(true)
     }
 }
-struct SupportView: View {
-    @Environment(\.dismiss) private var dismiss
+struct WebView: UIViewRepresentable {
+    let url: URL
+    
+    func makeUIView(context: Context) -> WKWebView {
+        return WKWebView()
+    }
+    
+    func updateUIView(_ webView: WKWebView, context: Context) {
+        let request = URLRequest(url: url)
+        webView.load(request)
+    }
+}
+
+struct AboutWebView: View {
+    @Binding var isPresented: Bool
+    
     var body: some View {
-        ZStack {
-            Image("background")
-                .resizable()
-                .scaledToFill()
-                .ignoresSafeArea()
-            VStack {
-                HStack {
+        NavigationView {
+            ZStack {
+                if let url = URL(string: "https://sites.google.com/view/farmfields-log/terms-of-use") {
+                    WebView(url: url)
+                        .ignoresSafeArea(.all)
+                } else {
+                    VStack {
+                        Text("Ошибка загрузки")
+                            .foregroundColor(.white)
+                        Text("Не удалось открыть страницу условий использования")
+                            .foregroundColor(.white.opacity(0.8))
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color.black)
+                }
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
                     Button(action: {
-                        dismiss()
+                        isPresented = false
                     }) {
                         Image("btn_back")
                             .resizable()
                             .scaledToFit()
-                            .frame(width: 40, height: 40)
+                            .frame(width: 30, height: 30)
                     }
-                    Spacer()
                 }
-                .padding()
-                VStack(spacing: 20) {
-                    Text("SUPPORT")
-                        .font(.custom("Chango-Regular", size: 28))
+                ToolbarItem(placement: .principal) {
+                    Text("ABOUT THE APP")
+                        .font(.custom("Chango-Regular", size: 16))
                         .foregroundColor(.white)
                         .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
-                    Text("Contact us for help and support")
-                        .font(.custom("Chango-Regular", size: 14))
-                        .foregroundColor(.white.opacity(0.8))
-                        .shadow(color: .black.opacity(0.8), radius: 1, x: 1, y: 1)
                 }
-                Spacer()
             }
+            .toolbarBackground(Color.black, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
         }
-        .navigationBarHidden(true)
+        .preferredColorScheme(.dark)
+    }
+}
+
+struct SupportWebView: View {
+    @Binding var isPresented: Bool
+    
+    var body: some View {
+        NavigationView {
+            ZStack {
+                if let url = URL(string: "https://sites.google.com/view/farmfields-log/app-support") {
+                    WebView(url: url)
+                        .ignoresSafeArea(.all)
+                } else {
+                    VStack {
+                        Text("Ошибка загрузки")
+                            .foregroundColor(.white)
+                        Text("Не удалось открыть страницу поддержки")
+                            .foregroundColor(.white.opacity(0.8))
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color.black)
+                }
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: {
+                        isPresented = false
+                    }) {
+                        Image("btn_back")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 30, height: 30)
+                    }
+                }
+                ToolbarItem(placement: .principal) {
+                    Text("SUPPORT")
+                        .font(.custom("Chango-Regular", size: 18))
+                        .foregroundColor(.white)
+                        .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
+                }
+            }
+            .toolbarBackground(Color.black, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+        }
+        .preferredColorScheme(.dark)
     }
 }
 #Preview {

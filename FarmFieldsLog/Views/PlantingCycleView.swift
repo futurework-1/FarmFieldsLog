@@ -159,7 +159,7 @@ struct CropCard: View {
             ZStack {
                 Image("field_empty")
                     .resizable()
-                    .frame(width: 340, height: 70)
+                    .scaledToFit()
                 HStack {
                     HStack(spacing: 12) {
                         Text(Crop.CropType.getEmojiForCrop(crop.name))
@@ -237,7 +237,7 @@ struct CropTypeSelectionOverlay: View {
                             ZStack {
                                 Image("field_empty")
                                     .resizable()
-                                    .frame(width: 340, height: 60)
+                                    .scaledToFit()
                                 HStack {
                                     Text("\(cropType.icon) \(cropType.rawValue.uppercased())")
                                         .font(.custom("Chango-Regular", size: 16))
@@ -319,7 +319,7 @@ struct CropDetailsOverlay: View {
                                     ZStack {
                                         Image("field_empty")
                                             .resizable()
-                                            .frame(width: 340, height: 50)
+                                            .scaledToFit()
                                         HStack {
                                             Text(selectedCropName.isEmpty ? "SELECT CROP" : selectedCropName)
                                                 .font(.custom("Chango-Regular", size: 14))
@@ -421,7 +421,8 @@ struct CropSelectionView: View {
                     ZStack {
                         Image("field_empty")
                             .resizable()
-                            .frame(width: 340, height: 50)
+                            .scaledToFit()
+                            .padding(.horizontal, 16)
                         HStack {
                             Text("\(Crop.CropType.getEmojiForCrop(cropName)) \(cropName)")
                                 .font(.custom("Chango-Regular", size: 14))
@@ -429,7 +430,7 @@ struct CropSelectionView: View {
                                 .shadow(color: .black.opacity(0.8), radius: 2, x: 2, y: 2)
                             Spacer()
                         }
-                        .padding(.horizontal, 25)
+                        .padding(.horizontal, 35)
                     }
                 }
                 .buttonStyle(PlainButtonStyle())
@@ -445,7 +446,7 @@ struct CropTextField: View {
         ZStack {
             Image("field_empty")
                 .resizable()
-                .frame(width: 340, height: 50)
+                .scaledToFit()
                 .shadow(color: .black.opacity(0.2), radius: 3, x: 0, y: 2)
             HStack {
                 TextField("", text: $text)
@@ -480,7 +481,6 @@ struct CropDatePickerField: View {
             Image("field_empty")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 340)
             HStack {
                 DatePicker("", selection: $selectedDate, displayedComponents: .date)
                     .datePickerStyle(CompactDatePickerStyle())
@@ -672,7 +672,6 @@ struct CropStatusCard: View {
             Image("field_empty")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 340)
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
